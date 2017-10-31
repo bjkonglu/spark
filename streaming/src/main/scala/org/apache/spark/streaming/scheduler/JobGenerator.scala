@@ -245,18 +245,22 @@ class JobGenerator(jobScheduler: JobScheduler) extends Logging {
     // truncated periodically. Otherwise, we may run into stack overflows (SPARK-6847).
     ssc.sparkContext.setLocalProperty(RDD.CHECKPOINT_ALL_MARKED_ANCESTORS, "true")
     Try {
-      jobScheduler.receiverTracker.allocateBlocksToBatch(time) // allocate received blocks to batch
-      graph.generateJobs(time) // generate jobs using allocated block
+      jobScheduler.receiverTracker.allocateBlocksToBatch(time) //                 [1]
+      graph.generateJobs(time) //                                                 [2]
     } match {
       case Success(jobs) =>
-        val streamIdToInputInfos = jobScheduler.inputInfoTracker.getInfo(time)
-        jobScheduler.submitJobSet(JobSet(time, jobs, streamIdToInputInfos))
+        val streamIdToInputInfos = jobScheduler.inputInfoTracker.getInfo(time)//  [3]
+        jobScheduler.submitJobSet(JobSet(time, jobs, streamIdToInputInfos))//     [4]
       case Failure(e) =>
         jobScheduler.reportError("Error generating jobs for time " + time, e)
         PythonDStream.stopStreamingContextIfPythonProcessIsDead(e)
     }
-    eventLoop.post(DoCheckpoint(time, clearCheckpointDataLater = false))
+    eventLoop.post(DoCheckpoint(time, clearCheckpointDataLater = false))//        [5]
   }
+
+  /*
+  * [5]步骤：job提交完后，触发一次doCheckpoint操作
+  * */
 
   /** Clear DStream metadata for the given `time`. */
   private def clearMetadata(time: Time) {
@@ -265,6 +269,7 @@ class JobGenerator(jobScheduler: JobScheduler) extends Logging {
     // If checkpointing is enabled, then checkpoint,
     // else mark batch to be fully processed
     if (shouldCheckpoint) {
+      // [一个 batch 做完，需要 clean 元数据时，触发一次doCheckpoint操作]
       eventLoop.post(DoCheckpoint(time, clearCheckpointDataLater = true))
     } else {
       // If checkpointing is not enabled, then delete metadata information about

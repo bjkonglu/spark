@@ -254,11 +254,12 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
           // scheduler, since we may need to write output to an existing directory during checkpoint
           // recovery; see SPARK-4835 for more details.
           SparkHadoopWriterUtils.disableOutputSpecValidation.withValue(true) {
-            job.run()
+            job.run()//触发job计算，即将计算好的RDD和空函数作为spark任务执行，分布到executor上执行
           }
           _eventLoop = eventLoop
           if (_eventLoop != null) {
-            _eventLoop.post(JobCompleted(job, clock.getTimeMillis()))
+            _eventLoop.post(JobCompleted(job, clock.getTimeMillis()))//job任务执行完成，触发[JobScheduler]job完成事件，->
+            // 然后接着触发[JobGenerator]的清除元数据操作(ClearMetadata)，后续在触发doCheckpoint操作
           }
         } else {
           // JobScheduler has been stopped.
