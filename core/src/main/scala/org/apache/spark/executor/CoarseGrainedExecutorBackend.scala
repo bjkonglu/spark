@@ -88,6 +88,7 @@ private[spark] class CoarseGrainedExecutorBackend(
     case RegisterExecutorFailed(message) =>
       exitExecutor(1, "Slave registration failed: " + message)
 
+    //TODO 接收从driver发送过来的执行task的消息
     case LaunchTask(data) =>
       if (executor == null) {
         exitExecutor(1, "Received LaunchTask command but executor was null")

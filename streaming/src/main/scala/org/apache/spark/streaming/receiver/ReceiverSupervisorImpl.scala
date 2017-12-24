@@ -107,7 +107,8 @@ private[streaming] class ReceiverSupervisorImpl(
     }
 
     def onPushBlock(blockId: StreamBlockId, arrayBuffer: ArrayBuffer[_]) {
-      pushArrayBuffer(arrayBuffer, None, Some(blockId))
+      pushArrayBuffer(arrayBuffer, None, Some(blockId))//TODO 生成的数据块从队列中拿出后，触发事件。
+      // 将块数据以pushArrayBuffer的形式存储
     }
   }
   private val defaultBlockGenerator = createBlockGenerator(defaultBlockGeneratorListener)
@@ -204,6 +205,7 @@ private[streaming] class ReceiverSupervisorImpl(
     val stoppedGenerators = registeredBlockGenerators.asScala.filter{ _.isStopped() }
     stoppedGenerators.foreach(registeredBlockGenerators.remove(_))
 
+    /*TODO 通过defaultBlockGeneratorListener创建BlockGenerator*/
     val newBlockGenerator = new BlockGenerator(blockGeneratorListener, streamId, env.conf)
     registeredBlockGenerators.add(newBlockGenerator)
     newBlockGenerator

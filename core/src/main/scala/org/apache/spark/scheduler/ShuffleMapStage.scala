@@ -65,6 +65,8 @@ private[spark] class ShuffleMapStage(
    * and each value in the array is the list of possible [[MapStatus]] for a partition
    * (a single task might run multiple times).
    */
+
+  //返回数组，长度为第一个参数指定，同时每个元素使用第二个参数进行填充。
   private[this] val outputLocs = Array.fill[List[MapStatus]](numPartitions)(Nil)
 
   override def toString: String = "ShuffleMapStage " + id
@@ -100,9 +102,12 @@ private[spark] class ShuffleMapStage(
 
   /** Returns the sequence of partition ids that are missing (i.e. needs to be computed). */
   override def findMissingPartitions(): Seq[Int] = {
+    //outputLocs: Array[List[MapStatus]],数组长度为numPartitions
     val missing = (0 until numPartitions).filter(id => outputLocs(id).isEmpty)
+
     assert(missing.size == numPartitions - _numAvailableOutputs,
       s"${missing.size} missing, expected ${numPartitions - _numAvailableOutputs}")
+
     missing
   }
 

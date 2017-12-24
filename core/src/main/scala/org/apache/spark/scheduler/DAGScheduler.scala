@@ -326,6 +326,7 @@ class DAGScheduler(
   def createShuffleMapStage(shuffleDep: ShuffleDependency[_, _, _], jobId: Int): ShuffleMapStage = {
     val rdd = shuffleDep.rdd
     val numTasks = rdd.partitions.length
+    //TODO 创建ShuffleMapStage的父节点
     val parents = getOrCreateParentStages(rdd, jobId)
     val id = nextStageId.getAndIncrement()
     val stage = new ShuffleMapStage(id, rdd, numTasks, parents, jobId, rdd.creationSite, shuffleDep)
@@ -420,6 +421,7 @@ class DAGScheduler(
    */
   private[scheduler] def getShuffleDependencies(
       rdd: RDD[_]): HashSet[ShuffleDependency[_, _, _]] = {
+    //TODO 广度优先遍历,获取依赖的父节点
     val parents = new HashSet[ShuffleDependency[_, _, _]]
     val visited = new HashSet[RDD[_]]
     val waitingForVisit = new Stack[RDD[_]]
@@ -589,7 +591,7 @@ class DAGScheduler(
     assert(partitions.size > 0)
     val func2 = func.asInstanceOf[(TaskContext, Iterator[_]) => _]
     val waiter = new JobWaiter(this, jobId, partitions.size, resultHandler)
-    //TODO 提交一个Job提交时间
+    //TODO 提交一个Job提交事件
     eventProcessLoop.post(JobSubmitted(
       jobId, rdd, func2, partitions.toArray, callSite, waiter,
       SerializationUtils.clone(properties)))
@@ -618,7 +620,7 @@ class DAGScheduler(
       resultHandler: (Int, U) => Unit,
       properties: Properties): Unit = {
     val start = System.nanoTime
-    //DAGScheduler提交任务
+    //TODO DAGScheduler提交任务
     val waiter = submitJob(rdd, func, partitions, callSite, resultHandler, properties)
     // Note: Do not call Await.ready(future) because that calls `scala.concurrent.blocking`,
     // which causes concurrent SQL executions to fail if a fork-join pool is used. Note that
@@ -854,6 +856,7 @@ class DAGScheduler(
     try {
       // New stage creation may throw an exception if, for example, jobs are run on a
       // HadoopRDD whose underlying HDFS files have been deleted.
+      //TODO 通过递归方式创建Stages,finalStage是一个链表的头
       finalStage = createResultStage(finalRDD, func, partitions, jobId, callSite)
     } catch {
       case e: Exception =>
@@ -931,15 +934,15 @@ class DAGScheduler(
     if (jobId.isDefined) {
       logDebug("submitStage(" + stage + ")")
       if (!waitingStages(stage) && !runningStages(stage) && !failedStages(stage)) {
+        //TODO 广度优先获取未生成的父节点依赖
         val missing = getMissingParentStages(stage).sortBy(_.id)
         logDebug("missing: " + missing)
         if (missing.isEmpty) {
           logInfo("Submitting " + stage + " (" + stage.rdd + "), which has no missing parents")
-          //TODO 提交任务(Tasks),该任务没有父依赖
           submitMissingTasks(stage, jobId.get)
         } else {
-          //TODO 递归提交父任务
           for (parent <- missing) {
+            //递归提交missing parents
             submitStage(parent)
           }
           waitingStages += stage
@@ -979,11 +982,9 @@ class DAGScheduler(
     val taskIdToLocations: Map[Int, Seq[TaskLocation]] = try {
       stage match {
         case s: ShuffleMapStage =>
-          //TODO 通过*getPreferredLocs*获取Task的分配位置
           partitionsToCompute.map { id => (id, getPreferredLocs(stage.rdd, id))}.toMap
         case s: ResultStage =>
           partitionsToCompute.map { id =>
-            //TODO 为什么要先获取partition的值？！
             val p = s.partitions(id)
             (id, getPreferredLocs(stage.rdd, p))
           }.toMap
@@ -1067,8 +1068,10 @@ class DAGScheduler(
     if (tasks.size > 0) {
       logInfo(s"Submitting ${tasks.size} missing tasks from $stage (${stage.rdd}) (first 15 " +
         s"tasks are for partitions ${tasks.take(15).map(_.partitionId)})")
+      //TODO 提交tasks
       taskScheduler.submitTasks(new TaskSet(
         tasks.toArray, stage.id, stage.latestInfo.attemptId, jobId, properties))
+
       stage.latestInfo.submissionTime = Some(clock.getTimeMillis())
     } else {
       // Because we posted SparkListenerStageSubmitted earlier, we should mark
@@ -1085,6 +1088,25 @@ class DAGScheduler(
           s"Stage ${stage} is actually done; (partitions: ${stage.numPartitions})"
       }
       logDebug(debugString)
+
+      //TODO 提交子阶段(childStages)
+
+      /*
+      * A(shuffle) -> B -> C(shuffle) -> F
+      *                    ^
+      *                    |
+      * D(shuffle) -> E -- H
+      *
+      * stages:
+      * 1. A -> B ShuffleMapStage
+      * 2. 1 -> C ShuffleMapStage
+      * 3. D -> E ShuffleMapStage
+      * 4. 2,(3 -> H) -> F ResultStage
+      *
+      * 从stage-4开始执行，然后寻找stage-4缺失的父节点stage-2,stage-3，将这些缺失的节点放入等待集合中
+      * 并继续往下层寻找子stage，直到找到叶子节点的stage，并将此叶子节点stage当做任务提交。
+      * 当此stage执行完后，开始执行(submitWaitingChildStages)其上层的节点stage
+      * */
 
       submitWaitingChildStages(stage)
     }

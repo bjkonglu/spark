@@ -69,7 +69,8 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
   def start(): Unit = synchronized {
     if (eventLoop != null) return // scheduler has already been started
 
-    logDebug("Starting JobScheduler")
+    logInfo("Starting JobScheduler")
+    //事件处理循环类：用来处理不同类型的事件
     eventLoop = new EventLoop[JobSchedulerEvent]("JobScheduler") {
       override protected def onReceive(event: JobSchedulerEvent): Unit = processEvent(event)
 
@@ -99,8 +100,10 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
       ssc.graph.batchDuration.milliseconds,
       clock)
     executorAllocationManager.foreach(ssc.addStreamingListener)
+
     receiverTracker.start()
     jobGenerator.start()
+
     executorAllocationManager.foreach(_.start())
     logInfo("Started JobScheduler")
   }
@@ -249,12 +252,24 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
         // it's possible that when `post` is called, `eventLoop` happens to null.
         var _eventLoop = eventLoop
         if (_eventLoop != null) {
+          //触发任务启动事件
           _eventLoop.post(JobStarted(job, clock.getTimeMillis()))
           // Disable checks for existing output directories in jobs launched by the streaming
           // scheduler, since we may need to write output to an existing directory during checkpoint
           // recovery; see SPARK-4835 for more details.
           SparkHadoopWriterUtils.disableOutputSpecValidation.withValue(true) {
-            job.run()//触发job计算，即将计算好的RDD和空函数作为spark任务执行，分布到executor上执行
+            /*
+            *  触发job计算，在driver端执行foreachFunc(rdd, time)
+            *  举个例子：
+            *  dstream.foreachRDD {rdd =>
+            *  val connection = createNewConnect() // executed at the driver
+            *  rdd.foreach {record =>
+            *     connection.send(record) // executed at the worker
+            *    }
+            *  }
+            *  rdd.foreach -> 会调用Spark Core的rdd分布式执行
+            * */
+            job.run()
           }
           _eventLoop = eventLoop
           if (_eventLoop != null) {

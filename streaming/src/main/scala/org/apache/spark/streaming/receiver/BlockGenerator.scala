@@ -116,8 +116,8 @@ private[streaming] class BlockGenerator(
   def start(): Unit = synchronized {
     if (state == Initialized) {
       state = Active
-      blockIntervalTimer.start()
-      blockPushingThread.start()
+      blockIntervalTimer.start()//TODO 定时器用于生成数据块，默认200ms生成一个数据块
+      blockPushingThread.start()//TODO 将生成的数据块，从队列中拿出
       logInfo("Started BlockGenerator")
     } else {
       throw new SparkException(
@@ -160,6 +160,7 @@ private[streaming] class BlockGenerator(
    */
   def addData(data: Any): Unit = {
     if (state == Active) {
+      //TODO 对数据输入进行限速
       waitToPush()
       synchronized {
         if (state == Active) {

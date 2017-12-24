@@ -219,6 +219,7 @@ private[spark] class TaskSchedulerImpl private[scheduler](
       }
       hasReceivedTask = true
     }
+    //TODO
     backend.reviveOffers()
   }
 
