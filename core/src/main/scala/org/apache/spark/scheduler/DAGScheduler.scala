@@ -301,6 +301,7 @@ class DAGScheduler(
         stage
 
       case None =>
+        //TODO 提前将当前stage的父阶段提交创建
         // Create stages for all missing ancestor shuffle dependencies.
         getMissingAncestorShuffleDependencies(shuffleDep.rdd).foreach { dep =>
           // Even though getMissingAncestorShuffleDependencies only returns shuffle dependencies
@@ -856,7 +857,8 @@ class DAGScheduler(
     try {
       // New stage creation may throw an exception if, for example, jobs are run on a
       // HadoopRDD whose underlying HDFS files have been deleted.
-      //TODO 通过递归方式创建Stages,finalStage是一个链表的头
+      //TODO 通过递归方式创建Stages,finalStage其父节点是一个list[ShuffleMapStage],
+      //TODO 而每个ShuffleMapStages的父节点也是一个list[ShuffleMapStage]...依次类推
       finalStage = createResultStage(finalRDD, func, partitions, jobId, callSite)
     } catch {
       case e: Exception =>
@@ -879,8 +881,10 @@ class DAGScheduler(
     finalStage.setActiveJob(job)
     val stageIds = jobIdToStageIds(jobId).toArray
     val stageInfos = stageIds.flatMap(id => stageIdToStage.get(id).map(_.latestInfo))
+    //事件处理机制
     listenerBus.post(
       SparkListenerJobStart(job.jobId, jobSubmissionTime, stageInfos, properties))
+
     //TODO 提交Stage
     submitStage(finalStage)
   }
@@ -934,17 +938,19 @@ class DAGScheduler(
     if (jobId.isDefined) {
       logDebug("submitStage(" + stage + ")")
       if (!waitingStages(stage) && !runningStages(stage) && !failedStages(stage)) {
-        //TODO 广度优先获取未生成的父节点依赖
+        //TODO 广度优先获取未生成的父节点依赖，父节点的依赖已经创建完并存储在内存里，这一步是直接获取
         val missing = getMissingParentStages(stage).sortBy(_.id)
         logDebug("missing: " + missing)
         if (missing.isEmpty) {
           logInfo("Submitting " + stage + " (" + stage.rdd + "), which has no missing parents")
+          //到达叶子阶段
           submitMissingTasks(stage, jobId.get)
         } else {
           for (parent <- missing) {
             //递归提交missing parents
             submitStage(parent)
           }
+          //将最后的阶段缓存
           waitingStages += stage
         }
       }
@@ -1108,7 +1114,7 @@ class DAGScheduler(
       * 当此stage执行完后，开始执行(submitWaitingChildStages)其上层的节点stage
       * */
 
-      submitWaitingChildStages(stage)
+      submitWaitingChildStages(stage)//为啥？
     }
   }
 
