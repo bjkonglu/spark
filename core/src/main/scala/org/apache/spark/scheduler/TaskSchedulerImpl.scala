@@ -189,6 +189,8 @@ private[spark] class TaskSchedulerImpl private[scheduler](
   override def submitTasks(taskSet: TaskSet) {
     val tasks = taskSet.tasks
     logInfo("Adding task set " + taskSet.id + " with " + tasks.length + " tasks")
+
+    //TODO ？！
     this.synchronized {
       val manager = createTaskSetManager(taskSet, maxTaskFailures)
       val stage = taskSet.stageId
@@ -219,6 +221,7 @@ private[spark] class TaskSchedulerImpl private[scheduler](
       }
       hasReceivedTask = true
     }
+
     //TODO
     backend.reviveOffers()
   }

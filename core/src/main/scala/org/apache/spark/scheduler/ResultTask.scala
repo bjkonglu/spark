@@ -78,8 +78,11 @@ private[spark] class ResultTask[T, U](
     } else 0L
     val ser = SparkEnv.get.closureSerializer.newInstance()
     //TODO 获取rdd和最后的输出func
+    //TODO rdd会迭代到ShuffledRDD/CoGroupedRDD上，而ShuffledRDD/CoGroupedRDD中compute方法中会使用shuffleRead,
+    //TODO 获取shuffleWrite结果
     val (rdd, func) = ser.deserialize[(RDD[T], (TaskContext, Iterator[T]) => U)](
       ByteBuffer.wrap(taskBinary.value), Thread.currentThread.getContextClassLoader)
+
     _executorDeserializeTime = System.currentTimeMillis() - deserializeStartTime
     _executorDeserializeCpuTime = if (threadMXBean.isCurrentThreadCpuTimeSupported) {
       threadMXBean.getCurrentThreadCpuTime - deserializeStartCpuTime
