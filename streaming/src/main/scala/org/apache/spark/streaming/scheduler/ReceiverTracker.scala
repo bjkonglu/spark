@@ -155,8 +155,10 @@ class ReceiverTracker(ssc: StreamingContext, skipReceiverLaunch: Boolean = false
     }
 
     if (!receiverInputStreams.isEmpty) {
+      //TODO 真正处理启动Receivers事件
       endpoint = ssc.env.rpcEnv.setupEndpoint(
         "ReceiverTracker", new ReceiverTrackerEndpoint(ssc.env.rpcEnv))
+      //TODO 触发Receiver启动
       if (!skipReceiverLaunch) launchReceivers()
       logInfo("ReceiverTracker started")
       trackerState = Started
@@ -441,6 +443,7 @@ class ReceiverTracker(ssc: StreamingContext, skipReceiverLaunch: Boolean = false
    * worker nodes as a parallel collection, and runs them.
    */
   private def launchReceivers(): Unit = {
+    //TODO 获取DAG中输入DStream
     val receivers = receiverInputStreams.map { nis =>
       val rcvr = nis.getReceiver()
       rcvr.setReceiverId(nis.id)
@@ -450,6 +453,7 @@ class ReceiverTracker(ssc: StreamingContext, skipReceiverLaunch: Boolean = false
     runDummySparkJob()
 
     logInfo("Starting " + receivers.length + " receivers")
+    //TODO 触发启动Receivers事件
     endpoint.send(StartAllReceivers(receivers))
   }
 
@@ -475,6 +479,7 @@ class ReceiverTracker(ssc: StreamingContext, skipReceiverLaunch: Boolean = false
 
     override def receive: PartialFunction[Any, Unit] = {
       // Local messages
+      //TODO 启动Receivers
       case StartAllReceivers(receivers) =>
         val scheduledLocations = schedulingPolicy.scheduleReceivers(receivers, getExecutors)
         for (receiver <- receivers) {
@@ -604,6 +609,7 @@ class ReceiverTracker(ssc: StreamingContext, skipReceiverLaunch: Boolean = false
             assert(iterator.hasNext == false)
             val supervisor = new ReceiverSupervisorImpl(
               receiver, SparkEnv.get, serializableHadoopConf.value, checkpointDirOption)
+            //TODO 启动ReceiverSupervisor, 然后它调用Receiver.onStart()启动Receiver，开始从外部接收数据
             supervisor.start()
             supervisor.awaitTermination()
           } else {

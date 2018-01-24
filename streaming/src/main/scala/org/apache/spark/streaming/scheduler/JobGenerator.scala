@@ -260,6 +260,7 @@ class JobGenerator(jobScheduler: JobScheduler) extends Logging {
         val streamIdToInputInfos = jobScheduler.inputInfoTracker.getInfo(time) //  [3]
         //通过静态DStreamGraph生成JobSet,并由jobScheduler提交
         jobScheduler.submitJobSet(JobSet(time, jobs, streamIdToInputInfos)) //     [4]
+        //TODO 任务执行成功会清除checkpoint元数据
       case Failure(e) =>
         jobScheduler.reportError("Error generating jobs for time " + time, e)
         PythonDStream.stopStreamingContextIfPythonProcessIsDead(e)

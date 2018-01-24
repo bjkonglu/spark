@@ -49,6 +49,7 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
   // Use of ConcurrentHashMap.keySet later causes an odd runtime problem due to Java 7/8 diff
   // https://gist.github.com/AlainODea/1375759b8720a3f9f094
   private val jobSets: java.util.Map[Time, JobSet] = new ConcurrentHashMap[Time, JobSet]
+  //TODO spark.streaming.concurrentJobs job并发数量
   private val numConcurrentJobs = ssc.conf.getInt("spark.streaming.concurrentJobs", 1)
   private val jobExecutor =
     ThreadUtils.newDaemonFixedThreadPool(numConcurrentJobs, "streaming-job-executor")
