@@ -21,9 +21,7 @@ import java.util.UUID
 import javax.annotation.concurrent.GuardedBy
 
 import scala.collection.mutable
-
 import org.apache.hadoop.fs.Path
-
 import org.apache.spark.annotation.{Experimental, InterfaceStability}
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.{AnalysisException, DataFrame, SparkSession}
@@ -239,6 +237,7 @@ class StreamingQueryManager private[sql] (sparkSession: SparkSession) extends Lo
           "is not supported in streaming DataFrames/Datasets and will be disabled.")
     }
 
+    //TODO 构建持续查询引擎对象
     new StreamingQueryWrapper(new StreamExecution(
       sparkSession,
       userSpecifiedName.orNull,
@@ -277,6 +276,7 @@ class StreamingQueryManager private[sql] (sparkSession: SparkSession) extends Lo
       recoverFromCheckpointLocation: Boolean = true,
       trigger: Trigger = ProcessingTime(0),
       triggerClock: Clock = new SystemClock()): StreamingQuery = {
+
     val query = createQuery(
       userSpecifiedName,
       userSpecifiedCheckpointLocation,
@@ -312,6 +312,8 @@ class StreamingQueryManager private[sql] (sparkSession: SparkSession) extends Lo
       // As it's provided by the user and can run arbitrary codes, we must not hold any lock here.
       // Otherwise, it's easy to cause dead-lock, or block too long if the user codes take a long
       // time to finish.
+
+      //TODO 触发查询引擎StreamExecution
       query.streamingQuery.start()
     } catch {
       case e: Throwable =>

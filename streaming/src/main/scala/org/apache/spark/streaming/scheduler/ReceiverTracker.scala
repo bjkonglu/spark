@@ -155,7 +155,7 @@ class ReceiverTracker(ssc: StreamingContext, skipReceiverLaunch: Boolean = false
     }
 
     if (!receiverInputStreams.isEmpty) {
-      //TODO 真正处理启动Receivers事件
+      //TODO ReceiverTrackerEndpoint真正处理启动Receivers事件
       endpoint = ssc.env.rpcEnv.setupEndpoint(
         "ReceiverTracker", new ReceiverTrackerEndpoint(ssc.env.rpcEnv))
       //TODO 触发Receiver启动
@@ -481,13 +481,16 @@ class ReceiverTracker(ssc: StreamingContext, skipReceiverLaunch: Boolean = false
       // Local messages
       //TODO 启动Receivers
       case StartAllReceivers(receivers) =>
+        //TODO 调度Receivers，即给Receivers分配Executors，已有Receiver的Executor不分配，不存活的Executor也不分配
         val scheduledLocations = schedulingPolicy.scheduleReceivers(receivers, getExecutors)
         for (receiver <- receivers) {
           val executors = scheduledLocations(receiver.streamId)
           updateReceiverScheduledExecutors(receiver.streamId, executors)
           receiverPreferredLocations(receiver.streamId) = receiver.preferredLocation
+          //TODO 将每个Receiver启动当成一个spark core job来运行
           startReceiver(receiver, executors)
         }
+      //TODO 重新启动Receiver
       case RestartReceiver(receiver) =>
         // Old scheduled executors minus the ones that are not active any more
         val oldScheduledExecutors = getStoredScheduledExecutors(receiver.streamId)
@@ -522,11 +525,14 @@ class ReceiverTracker(ssc: StreamingContext, skipReceiverLaunch: Boolean = false
 
     override def receiveAndReply(context: RpcCallContext): PartialFunction[Any, Unit] = {
       // Remote messages
+      //TODO 处理启动Receiver之前的注册信息
       case RegisterReceiver(streamId, typ, host, executorId, receiverEndpoint) =>
         val successful =
           registerReceiver(streamId, typ, host, executorId, receiverEndpoint, context.senderAddress)
         context.reply(successful)
+      //TODO 处理ReceiverSupervisor上报的数据块元数据信息
       case AddBlock(receivedBlockInfo) =>
+        //TODO 采用WAL模式进行冷备份
         if (WriteAheadLogUtils.isBatchingEnabled(ssc.conf, isDriver = true)) {
           walBatchingThreadPool.execute(new Runnable {
             override def run(): Unit = Utils.tryLogNonFatalError {
@@ -629,6 +635,7 @@ class ReceiverTracker(ssc: StreamingContext, skipReceiverLaunch: Boolean = false
       ssc.sparkContext.setJobDescription(s"Streaming job running receiver $receiverId")
       ssc.sparkContext.setCallSite(Option(ssc.getStartSite()).getOrElse(Utils.getCallSite()))
 
+      //TODO 将启动ReceiverSupervisor动作作为Spark Core任务提交，执行
       val future = ssc.sparkContext.submitJob[Receiver[_], Unit, Unit](
         receiverRDD, startReceiverFunc, Seq(0), (_, _) => Unit, ())
       // We will keep restarting the receiver job until ReceiverTracker is stopped
@@ -637,6 +644,7 @@ class ReceiverTracker(ssc: StreamingContext, skipReceiverLaunch: Boolean = false
           if (!shouldStartReceiver) {
             onReceiverJobFinish(receiverId)
           } else {
+            //TODO 如果Receiver分发到不正确的执行节点上，重新启动Receiver
             logInfo(s"Restarting Receiver $receiverId")
             self.send(RestartReceiver(receiver))
           }
@@ -646,6 +654,7 @@ class ReceiverTracker(ssc: StreamingContext, skipReceiverLaunch: Boolean = false
           } else {
             logError("Receiver has been stopped. Try to restart it.", e)
             logInfo(s"Restarting Receiver $receiverId")
+            //TODO Receiver启动失败，重新启动Receiver
             self.send(RestartReceiver(receiver))
           }
       }(ThreadUtils.sameThread)

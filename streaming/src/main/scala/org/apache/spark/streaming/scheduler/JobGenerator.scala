@@ -279,7 +279,7 @@ class JobGenerator(jobScheduler: JobScheduler) extends Logging {
     // If checkpointing is enabled, then checkpoint,
     // else mark batch to be fully processed
     if (shouldCheckpoint) {
-      // [一个 batch 做完，需要 clean 元数据时，触发一次doCheckpoint操作]
+      // TODO [一个 batch 做完，需要 clean 元数据时，触发一次doCheckpoint操作]
       eventLoop.post(DoCheckpoint(time, clearCheckpointDataLater = true))
     } else {
       // If checkpointing is not enabled, then delete metadata information about

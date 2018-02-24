@@ -229,6 +229,8 @@ final class DataStreamWriter[T] private[sql](ds: Dataset[T]) {
    *
    * @since 2.0.0
    */
+
+  //TODO StructuredStreaming程序入口
   def start(): StreamingQuery = {
     if (source.toLowerCase == DDLUtils.HIVE_PROVIDER) {
       throw new AnalysisException("Hive data source can only be used with tables, you can not " +
@@ -279,6 +281,8 @@ final class DataStreamWriter[T] private[sql](ds: Dataset[T]) {
           className = source,
           options = extraOptions.toMap,
           partitionColumns = normalizedParCols.getOrElse(Nil))
+
+      //TODO 实际查询逻辑
       df.sparkSession.sessionState.streamingQueryManager.startQuery(
         extraOptions.get("queryName"),
         extraOptions.get("checkpointLocation"),

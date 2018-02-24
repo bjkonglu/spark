@@ -140,12 +140,14 @@ final class DataStreamReader private[sql](sparkSession: SparkSession) extends Lo
         "read files of Hive data source directly.")
     }
 
+    //TODO DataSource用来创建Source
     val dataSource =
       DataSource(
         sparkSession,
         userSpecifiedSchema = userSpecifiedSchema,
         className = source,
         options = extraOptions.toMap)
+    //TODO 创建DataFrame
     Dataset.ofRows(sparkSession, StreamingRelation(dataSource))
   }
 

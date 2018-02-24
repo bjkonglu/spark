@@ -54,6 +54,7 @@ private[streaming] class ReceiverSupervisorImpl(
 
   private val receivedBlockHandler: ReceivedBlockHandler = {
     if (WriteAheadLogUtils.enableReceiverLog(env.conf)) {
+      //TODO 开启WAL模式，存储数据前将数据以日志形式写入checkpoint.
       if (checkpointDirOption.isEmpty) {
         throw new SparkException(
           "Cannot enable receiver write-ahead log without checkpoint directory set. " +
@@ -63,6 +64,7 @@ private[streaming] class ReceiverSupervisorImpl(
       new WriteAheadLogBasedBlockHandler(env.blockManager, env.serializerManager, receiver.streamId,
         receiver.storageLevel, env.conf, hadoopConf, checkpointDirOption.get)
     } else {
+      //TODO 直接存储数据
       new BlockManagerBasedBlockHandler(env.blockManager, receiver.storageLevel)
     }
   }
@@ -156,10 +158,12 @@ private[streaming] class ReceiverSupervisorImpl(
     ) {
     val blockId = blockIdOption.getOrElse(nextBlockId)
     val time = System.currentTimeMillis
+    //TODO 数据存储
     val blockStoreResult = receivedBlockHandler.storeBlock(blockId, receivedBlock)
     logDebug(s"Pushed block $blockId in ${(System.currentTimeMillis - time)} ms")
     val numRecords = blockStoreResult.numRecords
     val blockInfo = ReceivedBlockInfo(streamId, numRecords, metadataOption, blockStoreResult)
+    //TODO 数据上报ReceiverTracker，通过Driver节点的一个Ref
     trackerEndpoint.askSync[Boolean](AddBlock(blockInfo))
     logDebug(s"Reported block $blockId")
   }

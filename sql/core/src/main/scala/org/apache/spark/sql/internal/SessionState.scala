@@ -186,6 +186,7 @@ private[sql] object SessionState {
     apply(sparkSession, new SQLConf)
   }
 
+  //TODO 创建SessionState实例
   def apply(sparkSession: SparkSession, sqlConf: SQLConf): SessionState = {
     val sparkContext = sparkSession.sparkContext
 
@@ -208,6 +209,7 @@ private[sql] object SessionState {
 
     val streamingQueryManager: StreamingQueryManager = new StreamingQueryManager(sparkSession)
 
+    //TODO
     val queryExecutionCreator = (plan: LogicalPlan) => new QueryExecution(sparkSession, plan)
 
     val sessionState = new SessionState(

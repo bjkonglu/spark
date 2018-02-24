@@ -17,7 +17,7 @@
 
 package org.apache.spark.sql.execution.streaming
 
-import java.io.{InterruptedIOException, IOException}
+import java.io.{IOException, InterruptedIOException}
 import java.util.UUID
 import java.util.concurrent.{CountDownLatch, TimeUnit}
 import java.util.concurrent.atomic.AtomicReference
@@ -25,10 +25,9 @@ import java.util.concurrent.locks.ReentrantLock
 
 import scala.collection.mutable.ArrayBuffer
 import scala.util.control.NonFatal
-
 import org.apache.hadoop.fs.Path
-
 import org.apache.spark.internal.Logging
+import org.apache.spark.sql
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeMap, CurrentBatchTimestamp, CurrentDate, CurrentTimestamp}
@@ -152,6 +151,7 @@ class StreamExecution(
       case StreamingRelation(dataSource, _, output) =>
         // Materialize source to avoid creating it in every batch
         val metadataPath = s"$checkpointRoot/sources/$nextSourceId"
+        //TODO 创建源数据Source
         val source = dataSource.createSource(metadataPath)
         nextSourceId += 1
         // We still need to use the previous `output` instead of `source.schema` as attributes in
@@ -176,7 +176,7 @@ class StreamExecution(
   var lastExecution: IncrementalExecution = _
 
   /** Holds the most recent input data for each source. */
-  protected var newData: Map[Source, DataFrame] = _
+  protected var newData: Map[Source, sql.DataFrame] = _
 
   @volatile
   private var streamDeathCause: StreamingQueryException = null
@@ -250,6 +250,8 @@ class StreamExecution(
    * Furthermore, this method also ensures that [[QueryStartedEvent]] event is posted before the
    * `start()` method returns.
    */
+
+  //TODO ?!
   private def runBatches(): Unit = {
     try {
       if (sparkSession.sessionState.conf.streamingMetricsEnabled) {
@@ -289,6 +291,7 @@ class StreamExecution(
               reportTimeTaken("triggerExecution") {
                 if (currentBatchId < 0) {
                   // We'll do this initialization only once
+                  //TODO 初试化
                   populateStartOffsets(sparkSessionToRunBatches)
                   logDebug(s"Stream running from $committedOffsets to $availableOffsets")
                 } else {
@@ -651,6 +654,7 @@ class StreamExecution(
       new Dataset(sparkSessionToRunBatch, lastExecution, RowEncoder(lastExecution.analyzed.schema))
 
     reportTimeTaken("addBatch") {
+      //TODO 将计算结果提交给Sink
       sink.addBatch(currentBatchId, nextBatch)
     }
 

@@ -48,6 +48,7 @@ class QueryExecution(val sparkSession: SparkSession, val logical: LogicalPlan) {
   def assertAnalyzed(): Unit = {
     // Analyzer is invoked outside the try block to avoid calling it again from within the
     // catch block below.
+    //TODO
     analyzed
     try {
       sparkSession.sessionState.analyzer.checkAnalysis(analyzed)
@@ -67,6 +68,7 @@ class QueryExecution(val sparkSession: SparkSession, val logical: LogicalPlan) {
 
   lazy val analyzed: LogicalPlan = {
     SparkSession.setActiveSession(sparkSession)
+    //TODO analyzer: Analyzer
     sparkSession.sessionState.analyzer.execute(logical)
   }
 

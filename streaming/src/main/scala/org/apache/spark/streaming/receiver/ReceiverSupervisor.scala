@@ -143,6 +143,7 @@ private[streaming] abstract class ReceiverSupervisor(
   /** Start receiver */
   def startReceiver(): Unit = synchronized {
     try {
+      //TODO 启动Receiver之前先向ReceiverTracker发送注册信息(RegisterReceiver)，判断该执行节点是否为分发的执行节点
       if (onReceiverStart()) {
         logInfo(s"Starting receiver $streamId")
         receiverState = Started
