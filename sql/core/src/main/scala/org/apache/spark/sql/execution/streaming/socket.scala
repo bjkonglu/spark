@@ -67,6 +67,7 @@ class TextSocketSource(host: String, port: Int, includeTimestamp: Boolean, sqlCo
   @GuardedBy("this")
   protected var lastOffsetCommitted : LongOffset = new LongOffset(-1)
 
+  //TODO 启动源数据接收线程
   initialize()
 
   private def initialize(): Unit = synchronized {

@@ -156,6 +156,8 @@ class KafkaRDD[
     val valueDecoder = classTag[T].runtimeClass.getConstructor(classOf[VerifiableProperties])
       .newInstance(kc.config.props)
       .asInstanceOf[Decoder[V]]
+
+    //TODO 每个分区创建一个SimpleConsumer实例
     val consumer = connectLeader
     var requestOffset = part.fromOffset
     var iter: Iterator[MessageAndOffset] = null
@@ -201,14 +203,17 @@ class KafkaRDD[
         .dropWhile(_.offset < requestOffset)
     }
 
+    //TODO 父类NextIterator调用，关闭SimpleConsumer实例
     override def close(): Unit = {
       if (consumer != null) {
         consumer.close()
       }
     }
 
+    //TODO 父类NextIterator调用，获取的一个分区数据的范围为[fromOffset, untilOffset)
     override def getNext(): R = {
       if (iter == null || !iter.hasNext) {
+        //TODO 每次获取一条数据记录，然后迭代获取完分区中的数据
         iter = fetchBatch
       }
       if (!iter.hasNext) {

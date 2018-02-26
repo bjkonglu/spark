@@ -27,7 +27,6 @@ import scala.collection.mutable.ArrayBuffer
 import scala.util.control.NonFatal
 import org.apache.hadoop.fs.Path
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeMap, CurrentBatchTimestamp, CurrentDate, CurrentTimestamp}
@@ -151,7 +150,7 @@ class StreamExecution(
       case StreamingRelation(dataSource, _, output) =>
         // Materialize source to avoid creating it in every batch
         val metadataPath = s"$checkpointRoot/sources/$nextSourceId"
-        //TODO 创建源数据Source
+        //TODO 创建源数据Source，如果是Socket数据源，则新建TextSocketSource对象时，便会调用initialize()接口启动接收数据线程
         val source = dataSource.createSource(metadataPath)
         nextSourceId += 1
         // We still need to use the previous `output` instead of `source.schema` as attributes in
@@ -176,7 +175,7 @@ class StreamExecution(
   var lastExecution: IncrementalExecution = _
 
   /** Holds the most recent input data for each source. */
-  protected var newData: Map[Source, sql.DataFrame] = _
+  protected var newData: Map[Source, DataFrame] = _
 
   @volatile
   private var streamDeathCause: StreamingQueryException = null
@@ -283,6 +282,7 @@ class StreamExecution(
         // Unblock `awaitInitialization`
         initializationLatch.countDown()
 
+        //TODO 有时间间隔的触发器，周期执行下面逻辑
         triggerExecutor.execute(() => {
           startTrigger()
 
@@ -291,7 +291,7 @@ class StreamExecution(
               reportTimeTaken("triggerExecution") {
                 if (currentBatchId < 0) {
                   // We'll do this initialization only once
-                  //TODO 初试化
+                  //TODO ？！
                   populateStartOffsets(sparkSessionToRunBatches)
                   logDebug(s"Stream running from $committedOffsets to $availableOffsets")
                 } else {
@@ -300,6 +300,7 @@ class StreamExecution(
                 if (dataAvailable) {
                   currentStatus = currentStatus.copy(isDataAvailable = true)
                   updateStatusMessage("Processing new data")
+                  //TODO 处理一个batch
                   runBatch(sparkSessionToRunBatches)
                 }
               }
@@ -603,6 +604,7 @@ class StreamExecution(
         case (source, available)
           if committedOffsets.get(source).map(_ != available).getOrElse(true) =>
           val current = committedOffsets.get(source)
+          //TODO 源数据通过getBatch()方法获取新到达的数据
           val batch = source.getBatch(current, available)
           logDebug(s"Retrieving data from $source: $current -> $available")
           Some(source -> batch)
@@ -640,6 +642,7 @@ class StreamExecution(
     }
 
     reportTimeTaken("queryPlanning") {
+      //TODO 触发计算逻辑
       lastExecution = new IncrementalExecution(
         sparkSessionToRunBatch,
         triggerLogicalPlan,
