@@ -84,6 +84,7 @@ abstract class RuleExecutor[TreeType <: TreeNode[_]] extends Logging {
         curPlan = batch.rules.foldLeft(curPlan) {
           case (plan, rule) =>
             val startTime = System.nanoTime()
+            //TODO ?!
             val result = rule(plan)
             val runTime = System.nanoTime() - startTime
             RuleExecutor.timeMap.addAndGet(rule.ruleName, runTime)

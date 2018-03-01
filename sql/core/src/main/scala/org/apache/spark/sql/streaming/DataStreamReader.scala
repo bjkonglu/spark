@@ -18,7 +18,6 @@
 package org.apache.spark.sql.streaming
 
 import scala.collection.JavaConverters._
-
 import org.apache.spark.annotation.{Experimental, InterfaceStability}
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.{AnalysisException, DataFrame, Dataset, SparkSession}

@@ -43,8 +43,10 @@ class CachedKafkaConsumer[K, V] private(
 
   val topicPartition = new TopicPartition(topic, partition)
 
+  //TODO 切换JDQConsumer入口
   protected val consumer = {
     val c = new KafkaConsumer[K, V](kafkaParams)
+    //TODO 给消费者分配tps
     val tps = new ju.ArrayList[TopicPartition]()
     tps.add(topicPartition)
     c.assign(tps)
@@ -92,10 +94,12 @@ class CachedKafkaConsumer[K, V] private(
 
   private def seek(offset: Long): Unit = {
     logDebug(s"Seeking to $topicPartition $offset")
+    //TODO
     consumer.seek(topicPartition, offset)
   }
 
   private def poll(timeout: Long): Unit = {
+    //TODO
     val p = consumer.poll(timeout)
     val r = p.records(topicPartition)
     logDebug(s"Polled ${p.partitions()}  ${r.size}")
@@ -119,6 +123,7 @@ object CachedKafkaConsumer extends Logging {
       loadFactor: Float): Unit = CachedKafkaConsumer.synchronized {
     if (null == cache) {
       logInfo(s"Initializing cache $initialCapacity $maxCapacity $loadFactor")
+      //TODO 新建LinkedHashMap，并且通过判断记录现值和最大值大小，是否执行删除最少访问的记录
       cache = new ju.LinkedHashMap[CacheKey, CachedKafkaConsumer[_, _]](
         initialCapacity, loadFactor, true) {
         override def removeEldestEntry(

@@ -209,7 +209,7 @@ private[sql] object SessionState {
 
     val streamingQueryManager: StreamingQueryManager = new StreamingQueryManager(sparkSession)
 
-    //TODO
+    //TODO queryExecutionCreator
     val queryExecutionCreator = (plan: LogicalPlan) => new QueryExecution(sparkSession, plan)
 
     val sessionState = new SessionState(

@@ -26,6 +26,7 @@ import org.apache.spark.sql.execution.datasources.DataSource
 
 object StreamingRelation {
   def apply(dataSource: DataSource): StreamingRelation = {
+    //TODO 将DataSource转化为StreamRelation
     StreamingRelation(
       dataSource, dataSource.sourceInfo.name, dataSource.sourceInfo.schema.toAttributes)
   }

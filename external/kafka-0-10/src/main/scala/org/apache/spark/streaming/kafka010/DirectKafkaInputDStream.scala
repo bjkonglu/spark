@@ -102,6 +102,7 @@ private[spark] class DirectKafkaInputDStream[K, V](
   protected def getPreferredHosts: ju.Map[TopicPartition, String] = {
     locationStrategy match {
       case PreferBrokers => getBrokers
+      //TODO 将分区分配到连续的服务器节点上
       case PreferConsistent => ju.Collections.emptyMap[TopicPartition, String]()
       case PreferFixed(hostMap) => hostMap
     }
@@ -161,6 +162,8 @@ private[spark] class DirectKafkaInputDStream[K, V](
    * The concern here is that poll might consume messages despite being paused,
    * which would throw off consumer position.  Fix position if this happens.
    */
+
+  //TODO 修正位点
   private def paranoidPoll(c: Consumer[K, V]): Unit = {
     val msgs = c.poll(0)
     if (!msgs.isEmpty) {
@@ -232,6 +235,7 @@ private[spark] class DirectKafkaInputDStream[K, V](
     ssc.scheduler.inputInfoTracker.reportInfo(validTime, inputInfo)
 
     currentOffsets = untilOffsets
+    //TODO 提交位点信息
     commitAll()
     Some(rdd)
   }

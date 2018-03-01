@@ -187,7 +187,7 @@ case class DataSource(
 
   /** Returns the name and schema of the source that can be used to continually read data. */
   private def sourceSchema(): SourceInfo = {
-    //TODO 根据数据源类全限定名获取数据源数据格式
+    //TODO 根据数据源类全限定名获取数据源（名称，数据格式）
     providingClass.newInstance() match {
       case s: StreamSourceProvider =>
         val (name, schema) = s.sourceSchema(
@@ -233,6 +233,8 @@ case class DataSource(
   }
 
   /** Returns a source that can be used to continually read data. */
+
+  //TODO 创建源数据源
   def createSource(metadataPath: String): Source = {
     providingClass.newInstance() match {
       case s: StreamSourceProvider =>
@@ -262,6 +264,8 @@ case class DataSource(
   }
 
   /** Returns a sink that can be used to continually write data. */
+
+  //TODO 目标数据源
   def createSink(outputMode: OutputMode): Sink = {
     providingClass.newInstance() match {
       case s: StreamSinkProvider =>

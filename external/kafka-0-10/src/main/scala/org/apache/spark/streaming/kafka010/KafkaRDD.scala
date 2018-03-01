@@ -203,6 +203,7 @@ private[spark] class KafkaRDD[K, V](
         // just in case the prior attempt failures were cache related
         CachedKafkaConsumer.remove(groupId, part.topic, part.partition)
       }
+      //TODO 如果没有缓存CachedKafkaConsumer， 则新建一个CachedKafkaConsumer
       CachedKafkaConsumer.get[K, V](groupId, part.topic, part.partition, kafkaParams)
     } else {
       CachedKafkaConsumer.getUncached[K, V](groupId, part.topic, part.partition, kafkaParams)
@@ -220,6 +221,7 @@ private[spark] class KafkaRDD[K, V](
 
     override def next(): ConsumerRecord[K, V] = {
       assert(hasNext(), "Can't call getNext() once untilOffset has been reached")
+      //TODO 从Kafka服务器上拉取消息记录，每个分区一个CachedKafkaConsumer实例去拉取数据
       val r = consumer.get(requestOffset, pollTimeout)
       requestOffset += 1
       r

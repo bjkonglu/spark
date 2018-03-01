@@ -79,6 +79,7 @@ private case class Subscribe[K, V](
 
   def executorKafkaParams: ju.Map[String, Object] = kafkaParams
 
+  //TODO
   def onStart(currentOffsets: ju.Map[TopicPartition, jl.Long]): Consumer[K, V] = {
     val consumer = new KafkaConsumer[K, V](kafkaParams)
     consumer.subscribe(topics)
@@ -95,16 +96,19 @@ private case class Subscribe[K, V](
       val aor = kafkaParams.get(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG)
       val shouldSuppress = aor != null && aor.asInstanceOf[String].toUpperCase == "NONE"
       try {
+        //TODO 尝试拉取数据
         consumer.poll(0)
       } catch {
         case x: NoOffsetForPartitionException if shouldSuppress =>
           logWarning("Catching NoOffsetForPartitionException since " +
             ConsumerConfig.AUTO_OFFSET_RESET_CONFIG + " is none.  See KAFKA-3370")
       }
+      //TODO 分配每个分区的位点信息
       toSeek.asScala.foreach { case (topicPartition, offset) =>
           consumer.seek(topicPartition, offset)
       }
       // we've called poll, we must pause or next poll may consume messages and set position
+      //TODO 暂停拉取数据操作
       consumer.pause(consumer.assignment())
     }
 
