@@ -27,6 +27,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.util.control.NonFatal
 import org.apache.hadoop.fs.Path
 import org.apache.spark.internal.Logging
+import org.apache.spark.sql
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeMap, CurrentBatchTimestamp, CurrentDate, CurrentTimestamp}
@@ -175,7 +176,7 @@ class StreamExecution(
   var lastExecution: IncrementalExecution = _
 
   /** Holds the most recent input data for each source. */
-  protected var newData: Map[Source, DataFrame] = _
+  protected var newData: Map[Source, sql.DataFrame] = _
 
   @volatile
   private var streamDeathCause: StreamingQueryException = null
@@ -614,7 +615,7 @@ class StreamExecution(
 
     // A list of attributes that will need to be updated.
     var replacements = new ArrayBuffer[(Attribute, Attribute)]
-    // Replace sources in the logical plan with data that has arrived since the last batch.
+    //TODO Replace sources in the logical plan with data that has arrived since the last batch.
     val withNewSources = logicalPlan transform {
       case StreamingExecutionRelation(source, output) =>
         newData.get(source).map { data =>
@@ -642,7 +643,6 @@ class StreamExecution(
     }
 
     reportTimeTaken("queryPlanning") {
-      //TODO 触发计算逻辑
       lastExecution = new IncrementalExecution(
         sparkSessionToRunBatch,
         triggerLogicalPlan,
@@ -650,6 +650,7 @@ class StreamExecution(
         checkpointFile("state"),
         currentBatchId,
         offsetSeqMetadata)
+      //TODO 触发对本次执行的 LogicalPlan 的优化
       lastExecution.executedPlan // Force the lazy generation of execution plan
     }
 

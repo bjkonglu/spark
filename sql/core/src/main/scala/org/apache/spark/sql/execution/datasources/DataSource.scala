@@ -83,6 +83,7 @@ case class DataSource(
 
   case class SourceInfo(name: String, schema: StructType, partitionColumns: Seq[String])
 
+  //TODO 通过sink的短名称获取sink的全限定名
   lazy val providingClass: Class[_] = DataSource.lookupDataSource(className)
   lazy val sourceInfo: SourceInfo = sourceSchema()
   private val caseInsensitiveOptions = CaseInsensitiveMap(options)
@@ -532,7 +533,8 @@ object DataSource {
     val provider1 = backwardCompatibilityMap.getOrElse(provider, provider)
     val provider2 = s"$provider1.DefaultSource"
     val loader = Utils.getContextOrSparkClassLoader
-    //TODO 通过ClassLoader加载数据源类
+    //TODO 通过ClassLoader加载数据源类，通过加载"META-INF/services/org.apache.spark.sql.sources.DataSourceRegister"
+    //TODO 文件获取注册的sink
     val serviceLoader = ServiceLoader.load(classOf[DataSourceRegister], loader)
 
     try {

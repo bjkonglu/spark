@@ -194,7 +194,9 @@ class StreamingQueryManager private[sql] (sparkSession: SparkSession) extends Lo
       recoverFromCheckpointLocation: Boolean,
       trigger: Trigger,
       triggerClock: Clock): StreamingQueryWrapper = {
+    //TODO 创建查询实际逻辑
     var deleteCheckpointOnStop = false
+
     val checkpointLocation = userSpecifiedCheckpointLocation.map { userSpecified =>
       new Path(userSpecified).toUri.toString
     }.orElse {
@@ -225,6 +227,7 @@ class StreamingQueryManager private[sql] (sparkSession: SparkSession) extends Lo
       }
     }
 
+    //TODO 分析计划
     val analyzedPlan = df.queryExecution.analyzed
     df.queryExecution.assertAnalyzed()
 
@@ -277,6 +280,7 @@ class StreamingQueryManager private[sql] (sparkSession: SparkSession) extends Lo
       trigger: Trigger = ProcessingTime(0),
       triggerClock: Clock = new SystemClock()): StreamingQuery = {
 
+    //TODO 创建查询对象
     val query = createQuery(
       userSpecifiedName,
       userSpecifiedCheckpointLocation,

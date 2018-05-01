@@ -112,6 +112,7 @@ class SparkSubmitCommandBuilder extends AbstractCommandBuilder {
     List<String> submitArgs = args;
 
     if (args.size() > 0) {
+      //TODO 处理其他语言的提交脚本
       switch (args.get(0)) {
         case PYSPARK_SHELL:
           this.allowsMixedArguments = true;
@@ -131,6 +132,7 @@ class SparkSubmitCommandBuilder extends AbstractCommandBuilder {
       }
 
       this.isExample = isExample;
+      //TODO 开始解析选项参数
       OptionParser parser = new OptionParser();
       parser.parse(submitArgs);
       this.isAppResourceReq = parser.isAppResourceReq;

@@ -549,7 +549,7 @@ class SparkSession private(
    */
   private[sql] def internalCreateDataFrame(
       catalystRows: RDD[InternalRow],
-      schema: StructType): DataFrame = {
+      schema: StructType): sql.DataFrame = {
     // TODO: use MutableProjection when rowRDD is another DataFrame and the applied
     // schema differs from the existing schema on any field data type.
     val logicalPlan = LogicalRDD(schema.toAttributes, catalystRows)(self)
@@ -572,6 +572,8 @@ class SparkSession private(
     } else {
       rowRDD.map{r: Row => InternalRow.fromSeq(r.toSeq)}
     }
+
+    //TODO 通过内部的Row创建逻辑计划
     val logicalPlan = LogicalRDD(schema.toAttributes, catalystRows)(self)
     Dataset.ofRows(self, logicalPlan)
   }

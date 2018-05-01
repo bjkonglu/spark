@@ -136,6 +136,7 @@ class SparkSubmitOptionParser {
    * @throws IllegalArgumentException If an error is found during parsing.
    */
   protected final void parse(List<String> args) {
+    //TODO 匹配包含"="的参数项
     Pattern eqSeparatedOpt = Pattern.compile("(--[^=]+)=(.+)");
 
     int idx = 0;
@@ -144,14 +145,16 @@ class SparkSubmitOptionParser {
       String value = null;
 
       Matcher m = eqSeparatedOpt.matcher(arg);
+      //TODO 处理包含"="的参数项
       if (m.matches()) {
-        arg = m.group(1);
-        value = m.group(2);
+        arg = m.group(1);//--conf
+        value = m.group(2);//key=value
       }
 
       // Look for options with a value.
       String name = findCliOption(arg, opts);
       if (name != null) {
+        //TODO 处理不包含"="的参数项
         if (value == null) {
           if (idx == args.size() - 1) {
             throw new IllegalArgumentException(
@@ -160,6 +163,7 @@ class SparkSubmitOptionParser {
           idx++;
           value = args.get(idx);
         }
+        //TODO 处理具有name和value的参数项
         if (!handle(name, value)) {
           break;
         }

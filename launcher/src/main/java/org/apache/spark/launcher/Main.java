@@ -57,6 +57,7 @@ class Main {
     AbstractCommandBuilder builder;
     if (className.equals("org.apache.spark.deploy.SparkSubmit")) {
       try {
+        //TODO 通过SparkSubmit提交任务
         builder = new SparkSubmitCommandBuilder(args);
       } catch (IllegalArgumentException e) {
         printLaunchCommand = false;
@@ -79,6 +80,7 @@ class Main {
         builder = new SparkSubmitCommandBuilder(help);
       }
     } else {
+      //TODO 通过自定义的提交类提交任务
       builder = new SparkClassCommandBuilder(className, args);
     }
 

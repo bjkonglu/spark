@@ -391,6 +391,7 @@ private[spark] class ApplicationMaster(
     driverEndpoint
   }
 
+  //TODO 运行Driver
   private def runDriver(securityMgr: SecurityManager): Unit = {
     addAmIpFilter()
     userClassThread = startUserApplication()
@@ -428,6 +429,7 @@ private[spark] class ApplicationMaster(
     }
   }
 
+  //TODO 运行Executor
   private def runExecutorLauncher(securityMgr: SecurityManager): Unit = {
     val port = sparkConf.get(AM_PORT)
     rpcEnv = RpcEnv.create("sparkYarnAM", Utils.localHostName, port, sparkConf, securityMgr,
