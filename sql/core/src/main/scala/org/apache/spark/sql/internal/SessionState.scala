@@ -105,6 +105,7 @@ private[sql] class SessionState(
   //  Helper methods, partially leftover from pre-2.0 days
   // ------------------------------------------------------
 
+  //TODO 各种函数（map、filter）转化成QueryExecution
   def executePlan(plan: LogicalPlan): QueryExecution = createQueryExecution(plan)
 
   def refreshTable(tableName: String): Unit = {

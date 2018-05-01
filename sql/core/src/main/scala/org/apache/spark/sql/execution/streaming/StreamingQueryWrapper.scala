@@ -34,6 +34,7 @@ class StreamingQueryWrapper(@transient private val _streamingQuery: StreamExecut
     if (_streamingQuery == null) {
       throw new IllegalStateException("StreamingQuery cannot be used in executors")
     }
+    //TODO 初始化StreamExecution执行引擎
     _streamingQuery
   }
 

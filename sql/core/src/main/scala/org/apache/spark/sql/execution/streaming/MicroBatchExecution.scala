@@ -144,6 +144,7 @@ class MicroBatchExecution(
           if (dataAvailable) {
             currentStatus = currentStatus.copy(isDataAvailable = true)
             updateStatusMessage("Processing new data")
+            //TODO 处理micro-batch
             runBatch(sparkSessionForStream)
           }
         }
@@ -279,6 +280,7 @@ class MicroBatchExecution(
           case s: Source =>
             updateStatusMessage(s"Getting offsets from $s")
             reportTimeTaken("getOffset") {
+              //TODO 通过source.getOffset获取最近的位点
               (s, s.getOffset)
             }
           case s: MicroBatchReader =>
@@ -295,6 +297,7 @@ class MicroBatchExecution(
             val currentOffset = reportTimeTaken("getEndOffset") { s.getEndOffset() }
             (s, Option(currentOffset))
         }.toMap
+        //TODO 初始化availableOffsets
         availableOffsets ++= latestOffsets.filter { case (_, o) => o.nonEmpty }.mapValues(_.get)
 
         if (dataAvailable) {
@@ -406,6 +409,7 @@ class MicroBatchExecution(
         case (source: Source, available)
           if committedOffsets.get(source).map(_ != available).getOrElse(true) =>
           val current = committedOffsets.get(source)
+          //TODO 根据起始位点和终止位点从源端获取数据
           val batch = source.getBatch(current, available)
           assert(batch.isStreaming,
             s"DataFrame returned by getBatch from $source did not have isStreaming=true\n" +
@@ -488,6 +492,7 @@ class MicroBatchExecution(
       MicroBatchExecution.BATCH_ID_KEY, currentBatchId.toString)
 
     reportTimeTaken("queryPlanning") {
+      //TODO 执行计划实体
       lastExecution = new IncrementalExecution(
         sparkSessionToRunBatch,
         triggerLogicalPlan,
@@ -505,6 +510,7 @@ class MicroBatchExecution(
     reportTimeTaken("addBatch") {
       SQLExecution.withNewExecutionId(sparkSessionToRunBatch, lastExecution) {
         sink match {
+          //TODO 将数据落地到目标源
           case s: Sink => s.addBatch(currentBatchId, nextBatch)
           case _: StreamWriteSupport =>
             // This doesn't accumulate any data - it just forces execution of the microbatch writer.

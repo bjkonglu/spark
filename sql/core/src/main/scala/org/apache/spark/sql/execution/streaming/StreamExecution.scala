@@ -186,6 +186,7 @@ abstract class StreamExecution(
         // To fix call site like "run at <unknown>:0", we bridge the call site from the caller
         // thread to this micro batch thread
         sparkSession.sparkContext.setCallSite(callSite)
+        //TODO 启动流式查询
         runStream()
       }
     }
@@ -225,6 +226,7 @@ abstract class StreamExecution(
   def start(): Unit = {
     logInfo(s"Starting $prettyIdString. Use $resolvedCheckpointRoot to store the query checkpoint.")
     queryExecutionThread.setDaemon(true)
+    //TODO 开启查询线程
     queryExecutionThread.start()
     startLatch.await()  // Wait until thread started and QueryStart event has been posted
   }
@@ -276,6 +278,7 @@ abstract class StreamExecution(
       if (state.compareAndSet(INITIALIZING, ACTIVE)) {
         // Unblock `awaitInitialization`
         initializationLatch.countDown()
+        //TODO 运行状态是active的流查询
         runActivatedStream(sparkSessionForStream)
         updateStatusMessage("Stopped")
       } else {

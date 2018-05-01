@@ -203,7 +203,7 @@ private[kafka010] class KafkaSource(
    * [`start.get.partitionToOffsets`, `end.partitionToOffsets`), i.e. end.partitionToOffsets is
    * exclusive.
    */
-  override def getBatch(start: Option[Offset], end: Offset): DataFrame = {
+  override def getBatch(start: Option[Offset], end: Offset): Any = {
     // Make sure initialPartitionOffsets is initialized
     initialPartitionOffsets
 
@@ -299,6 +299,7 @@ private[kafka010] class KafkaSource(
     logInfo("GetBatch generating RDD of offset range: " +
       offsetRanges.sortBy(_.topicPartition.toString).mkString(", "))
 
+    //TODO 将rdd转化为DF - 1
     sqlContext.internalCreateDataFrame(rdd, schema, isStreaming = true)
   }
 

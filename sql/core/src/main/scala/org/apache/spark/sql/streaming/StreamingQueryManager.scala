@@ -296,6 +296,7 @@ class StreamingQueryManager private[sql] (sparkSession: SparkSession) extends Lo
       recoverFromCheckpointLocation: Boolean = true,
       trigger: Trigger = ProcessingTime(0),
       triggerClock: Clock = new SystemClock()): StreamingQuery = {
+    //TODO 创建query
     val query = createQuery(
       userSpecifiedName,
       userSpecifiedCheckpointLocation,
@@ -332,6 +333,7 @@ class StreamingQueryManager private[sql] (sparkSession: SparkSession) extends Lo
       // As it's provided by the user and can run arbitrary codes, we must not hold any lock here.
       // Otherwise, it's easy to cause dead-lock, or block too long if the user codes take a long
       // time to finish.
+      //TODO sql streaming执行入口
       query.streamingQuery.start()
     } catch {
       case e: Throwable =>

@@ -617,6 +617,8 @@ object DataSource extends Logging {
     }
     val provider2 = s"$provider1.DefaultSource"
     val loader = Utils.getContextOrSparkClassLoader
+
+    //TODO 加载服务？！
     val serviceLoader = ServiceLoader.load(classOf[DataSourceRegister], loader)
 
     try {

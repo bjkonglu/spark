@@ -424,6 +424,7 @@ class SQLContext private[sql](val sparkSession: SparkSession)
       catalystRows: RDD[InternalRow],
       schema: StructType,
       isStreaming: Boolean = false) = {
+    //TODO 将RDD转化为DF - 2
     sparkSession.internalCreateDataFrame(catalystRows, schema, isStreaming)
   }
 
