@@ -80,6 +80,7 @@ private class AsyncEventQueue(val name: String, conf: SparkConf, metrics: LiveLi
     }
   }
 
+  //TODO 分发的主要实现逻辑
   private def dispatch(): Unit = LiveListenerBus.withinListenerThread.withValue(true) {
     try {
       var next: SparkListenerEvent = eventQueue.take()
@@ -112,6 +113,7 @@ private class AsyncEventQueue(val name: String, conf: SparkConf, metrics: LiveLi
   private[scheduler] def start(sc: SparkContext): Unit = {
     if (started.compareAndSet(false, true)) {
       this.sc = sc
+      //TODO 启动分发线程
       dispatchThread.start()
     } else {
       throw new IllegalStateException(s"$name already started!")

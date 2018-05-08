@@ -280,6 +280,7 @@ final class DataStreamWriter[T] private[sql](ds: Dataset[T]) {
         useTempCheckpointLocation = true,
         trigger = trigger)
     } else {
+      //TODO 查看目标数据源
       val ds = DataSource.lookupDataSource(source, df.sparkSession.sessionState.conf)
       val disabledSources = df.sparkSession.sqlContext.conf.disabledV2StreamingWriters.split(",")
       val sink = ds.newInstance() match {

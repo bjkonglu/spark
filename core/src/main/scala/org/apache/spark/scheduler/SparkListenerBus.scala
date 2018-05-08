@@ -25,6 +25,7 @@ import org.apache.spark.util.ListenerBus
 private[spark] trait SparkListenerBus
   extends ListenerBus[SparkListenerInterface, SparkListenerEvent] {
 
+  //TODO 所有(监听器，事件)的统一处理入口，注意第三方的listenerBus也是会作为监听器被处理
   protected override def doPostEvent(
       listener: SparkListenerInterface,
       event: SparkListenerEvent): Unit = {
@@ -77,6 +78,7 @@ private[spark] trait SparkListenerBus
         listener.onBlockUpdated(blockUpdated)
       case speculativeTaskSubmitted: SparkListenerSpeculativeTaskSubmitted =>
         listener.onSpeculativeTaskSubmitted(speculativeTaskSubmitted)
+        //TODO 第三方的listenerBus同时也实现了listener接口，就是为了被调用自身的onOtherEvent()
       case _ => listener.onOtherEvent(event)
     }
   }

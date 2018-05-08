@@ -243,6 +243,7 @@ abstract class LeafNode extends LogicalPlan {
 abstract class UnaryNode extends LogicalPlan {
   def child: LogicalPlan
 
+  //TODO 将当前逻辑计划添加到容器头部
   override final def children: Seq[LogicalPlan] = child :: Nil
 
   /**

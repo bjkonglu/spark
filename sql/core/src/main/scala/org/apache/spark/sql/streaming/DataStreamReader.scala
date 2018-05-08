@@ -157,6 +157,7 @@ final class DataStreamReader private[sql](sparkSession: SparkSession) extends Lo
         "read files of Hive data source directly.")
     }
 
+    //TODO 寻找注册的数据源提供者，并实例化
     val ds = DataSource.lookupDataSource(source, sparkSession.sqlContext.conf).newInstance()
     val options = new DataSourceOptions(extraOptions.asJava)
     // We need to generate the V1 data source so we can pass it to the V2 relation as a shim.

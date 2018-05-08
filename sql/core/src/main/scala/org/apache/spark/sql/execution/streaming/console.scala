@@ -17,7 +17,7 @@
 
 package org.apache.spark.sql.execution.streaming
 
-import org.apache.spark.sql._
+import org.apache.spark.sql.{DataFrame, _}
 import org.apache.spark.sql.execution.streaming.sources.ConsoleWriter
 import org.apache.spark.sql.sources.{BaseRelation, CreatableRelationProvider, DataSourceRegister}
 import org.apache.spark.sql.sources.v2.{DataSourceOptions, DataSourceV2, StreamWriteSupport}

@@ -58,6 +58,7 @@ class ContinuousExecution(
   // For use only in test harnesses.
   private[sql] var currentEpochCoordinatorId: String = _
 
+  //TODO logicalPlan?
   override val logicalPlan: LogicalPlan = {
     val toExecutionRelationMap = MutableMap[StreamingRelationV2, ContinuousExecutionRelation]()
     analyzedPlan.transform {
@@ -161,6 +162,7 @@ class ContinuousExecution(
           metadataPath,
           new DataSourceOptions(extraReaderOptions.asJava))
     }
+    //TODO streamReader
     uniqueSources = continuousSources.distinct
 
     val offsets = getStartOffsets(sparkSessionForQuery)
@@ -193,6 +195,7 @@ class ContinuousExecution(
           "CurrentTimestamp and CurrentDate not yet supported for continuous processing")
     }
 
+    //TODO streamWriter
     val writer = sink.createStreamWriter(
       s"$runId",
       triggerLogicalPlan.schema,

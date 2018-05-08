@@ -40,6 +40,7 @@ class StreamingQueryListenerBus(sparkListenerBus: LiveListenerBus)
 
   import StreamingQueryListener._
 
+  //TODO 将本身作为一个监听器注册到LiveListenerBus中
   sparkListenerBus.addToQueue(this, StreamingQueryListenerBus.STREAM_EVENT_QUERY)
 
   /**

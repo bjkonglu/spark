@@ -618,10 +618,11 @@ object DataSource extends Logging {
     val provider2 = s"$provider1.DefaultSource"
     val loader = Utils.getContextOrSparkClassLoader
 
-    //TODO 加载服务？！
+    //TODO 到spark-sql-core工程下META-INF.services/org.apache.spark.sql.sources.DataSourceRegister加载数据源提供者
     val serviceLoader = ServiceLoader.load(classOf[DataSourceRegister], loader)
 
     try {
+      //TODO 返回数据源提供者类(class)
       serviceLoader.asScala.filter(_.shortName().equalsIgnoreCase(provider1)).toList match {
         // the provider format did not match any given registered aliases
         case Nil =>

@@ -2551,6 +2551,7 @@ class Dataset[T] private[sql](
   @Experimental
   @InterfaceStability.Evolving
   def map[U : Encoder](func: T => U): Dataset[U] = withTypedPlan {
+    //TODO 将func封装成logicalPlan
     MapElements[T, U](func, planWithBarrier)
   }
 

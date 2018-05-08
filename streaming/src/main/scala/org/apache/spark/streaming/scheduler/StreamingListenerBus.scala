@@ -33,6 +33,8 @@ private[streaming] class StreamingListenerBus(sparkListenerBus: LiveListenerBus)
    * Post a StreamingListenerEvent to the Spark listener bus asynchronously. This event will be
    * dispatched to all StreamingListeners in the thread of the Spark listener bus.
    */
+
+  //TODO 所有事件(event)的post入口都是LiveListenerBus.post(..)
   def post(event: StreamingListenerEvent) {
     sparkListenerBus.post(new WrappedStreamingListenerEvent(event))
   }
@@ -40,6 +42,7 @@ private[streaming] class StreamingListenerBus(sparkListenerBus: LiveListenerBus)
   override def onOtherEvent(event: SparkListenerEvent): Unit = {
     event match {
       case WrappedStreamingListenerEvent(e) =>
+        //TODO StreamingListenerBus通过调用自己的postToAll()将event分发到各个listener
         postToAll(e)
       case _ =>
     }
@@ -76,6 +79,8 @@ private[streaming] class StreamingListenerBus(sparkListenerBus: LiveListenerBus)
    * forward them to StreamingListeners.
    */
   def start(): Unit = {
+    //FIXME 将本身作为监听器注册到LiveListenerBus中，所谓的队列就是AsyncEventQueue实例，AsyncEventQueue继承了SparkListenerBus
+    //FIXME 可以将监听器存在在容器中，同时本身有存放事件的队列
     sparkListenerBus.addToStatusQueue(this)
   }
 
