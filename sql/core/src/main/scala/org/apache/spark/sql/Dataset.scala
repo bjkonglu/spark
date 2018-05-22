@@ -70,8 +70,9 @@ private[sql] object Dataset {
   }
 
   def ofRows(sparkSession: SparkSession, logicalPlan: LogicalPlan): DataFrame = {
+    //TODO 将LogicalPlan封装到QueryExecution
     val qe = sparkSession.sessionState.executePlan(logicalPlan)
-    qe.assertAnalyzed()
+    qe.assertAnalyzed()//FIXME ?!
     new Dataset[Row](sparkSession, qe, RowEncoder(qe.analyzed.schema))
   }
 }
@@ -175,6 +176,7 @@ class Dataset[T] private[sql](
   // you wrap it with `withNewExecutionId` if this actions doesn't call other action.
 
   def this(sparkSession: SparkSession, logicalPlan: LogicalPlan, encoder: Encoder[T]) = {
+    //TODO 内部将LogicalPlan封装成QueryExecution
     this(sparkSession, sparkSession.sessionState.executePlan(logicalPlan), encoder)
   }
 
@@ -2551,7 +2553,7 @@ class Dataset[T] private[sql](
   @Experimental
   @InterfaceStability.Evolving
   def map[U : Encoder](func: T => U): Dataset[U] = withTypedPlan {
-    //TODO 将func封装成logicalPlan
+    //TODO 将func封装成logicalPlan，将当前的DataFrame的LogicalPlan标记已分析
     MapElements[T, U](func, planWithBarrier)
   }
 
@@ -3299,6 +3301,7 @@ class Dataset[T] private[sql](
 
   /** A convenient function to wrap a logical plan and produce a Dataset. */
   @inline private def withTypedPlan[U : Encoder](logicalPlan: LogicalPlan): Dataset[U] = {
+    //TODO 将新生成的LogicalPlan封装成Dataset
     Dataset(sparkSession, logicalPlan)
   }
 

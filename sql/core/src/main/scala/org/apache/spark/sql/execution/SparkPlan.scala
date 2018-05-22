@@ -128,6 +128,7 @@ abstract class SparkPlan extends QueryPlan[SparkPlan] with Logging with Serializ
     if (isCanonicalizedPlan) {
       throw new IllegalStateException("A canonicalized plan is not supposed to be executed.")
     }
+    //TODO 开始执行物理计划
     doExecute()
   }
 
@@ -224,6 +225,7 @@ abstract class SparkPlan extends QueryPlan[SparkPlan] with Logging with Serializ
    *
    * Overridden by concrete implementations of SparkPlan.
    */
+  //TODO 根据根节点的物理计划类型，采用相应的执行器，完成RDD之间的转换
   protected def doExecute(): RDD[InternalRow]
 
   /**

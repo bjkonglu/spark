@@ -51,7 +51,7 @@ object UnsupportedOperationChecker {
     def collectStreamingAggregates(subplan: LogicalPlan): Seq[Aggregate] = {
       subplan.collect { case a: Aggregate if a.isStreaming => a }
     }
-
+    //FIXME
     val mapGroupsWithStates = plan.collect {
       case f: FlatMapGroupsWithState if f.isStreaming && f.isMapGroupsWithState => f
     }
@@ -93,6 +93,7 @@ object UnsupportedOperationChecker {
     }
 
     // Disallow some output mode
+    //FIXME
     outputMode match {
       case InternalOutputModes.Append if aggregates.nonEmpty =>
         val aggregate = aggregates.head
@@ -139,6 +140,8 @@ object UnsupportedOperationChecker {
       }
     }
 
+
+    //FIXME
     plan.foreachUp { implicit subPlan =>
 
       // Operations that cannot exists anywhere in a streaming plan

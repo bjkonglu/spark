@@ -73,6 +73,7 @@ abstract class RuleExecutor[TreeType <: TreeNode[_]] extends Logging {
     var curPlan = plan
     val queryExecutionMetrics = RuleExecutor.queryExecutionMeter
 
+    //TODO Analyzer.batches是优化规则集合
     batches.foreach { batch =>
       val batchStartPlan = curPlan
       var iteration = 1
@@ -84,6 +85,7 @@ abstract class RuleExecutor[TreeType <: TreeNode[_]] extends Logging {
         curPlan = batch.rules.foldLeft(curPlan) {
           case (plan, rule) =>
             val startTime = System.nanoTime()
+            //TODO 将规则施加到logicalPlan
             val result = rule(plan)
             val runTime = System.nanoTime() - startTime
 

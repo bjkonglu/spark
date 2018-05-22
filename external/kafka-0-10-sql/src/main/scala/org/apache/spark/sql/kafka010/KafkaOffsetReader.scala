@@ -75,6 +75,8 @@ private[kafka010] class KafkaOffsetReader(
    * A KafkaConsumer used in the driver to query the latest Kafka offsets. This only queries the
    * offsets and never commits them.
    */
+
+  //TODO 创建kafkaConsumer
   protected var consumer = createConsumer()
 
   private val maxOffsetFetchAttempts =

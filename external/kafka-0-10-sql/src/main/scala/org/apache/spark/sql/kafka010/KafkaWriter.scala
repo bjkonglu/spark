@@ -84,6 +84,10 @@ private[kafka010] object KafkaWriter extends Logging {
       topic: Option[String] = None): Unit = {
     val schema = queryExecution.analyzed.output
     validateQuery(schema, kafkaParameters, topic)
+
+    //TODO queryExecution.toRdd: 触发执行物理计划
+    //TODO queryExecution.toRdd的返回值是执行完物理计划的RDD
+
     queryExecution.toRdd.foreachPartition { iter =>
       val writeTask = new KafkaWriteTask(kafkaParameters, schema, topic)
       Utils.tryWithSafeFinally(block = writeTask.execute(iter))(

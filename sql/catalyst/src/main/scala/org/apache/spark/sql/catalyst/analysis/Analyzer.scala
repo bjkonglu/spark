@@ -100,9 +100,12 @@ class Analyzer(
   }
 
   def executeAndCheck(plan: LogicalPlan): LogicalPlan = {
+    //TODO 执行计划
     val analyzed = execute(plan)
     try {
+      //TODO 检查分析计划
       checkAnalysis(analyzed)
+      //TODO 排除已标记的logicalPlan
       EliminateBarriers(analyzed)
     } catch {
       case e: AnalysisException =>
@@ -139,6 +142,8 @@ class Analyzer(
    */
   val postHocResolutionRules: Seq[Rule[LogicalPlan]] = Nil
 
+
+  //TODO 优化规则
   lazy val batches: Seq[Batch] = Seq(
     Batch("Hints", fixedPoint,
       new ResolveHints.ResolveBroadcastHints(conf),
@@ -705,11 +710,12 @@ class Analyzer(
           (oldVersion, AnalysisBarrier(newVersion))
 
         // Handle base relations that might appear more than once.
+        //TODO
         case oldVersion: MultiInstanceRelation
             if oldVersion.outputSet.intersect(conflictingAttributes).nonEmpty =>
           val newVersion = oldVersion.newInstance()
           (oldVersion, newVersion)
-
+        //TODO
         case oldVersion: SerializeFromObject
             if oldVersion.outputSet.intersect(conflictingAttributes).nonEmpty =>
           (oldVersion, oldVersion.copy(serializer = oldVersion.serializer.map(_.newInstance())))
@@ -830,14 +836,18 @@ class Analyzer(
       case _ => e.mapChildren(resolve(_, q))
     }
 
+    //TODO 处理依赖的规则
     def apply(plan: LogicalPlan): LogicalPlan = plan.transformUp {
+
       case p: LogicalPlan if !p.childrenResolved => p
 
       // If the projection list contains Stars, expand it.
+      //TODO 处理"select"构建的Project
       case p: Project if containsStar(p.projectList) =>
         p.copy(projectList = buildExpandedProjectList(p.projectList, p.child))
       // If the aggregate function argument contains Stars, expand it.
       case a: Aggregate if containsStar(a.aggregateExpressions) =>
+        //TODO 处理聚合类的操作OP
         if (a.groupingExpressions.exists(_.isInstanceOf[UnresolvedOrdinal])) {
           failAnalysis(
             "Star (*) is not allowed in select list when GROUP BY ordinal position is used")
@@ -884,6 +894,7 @@ class Analyzer(
 
       // Skips plan which contains deserializer expressions, as they should be resolved by another
       // rule: ResolveDeserializer.
+      //FIXME
       case plan if containsDeserializer(plan.expressions) => plan
 
       case q: LogicalPlan =>
@@ -1194,6 +1205,7 @@ class Analyzer(
    * @see https://issues.apache.org/jira/browse/SPARK-19737
    */
   object LookupFunctions extends Rule[LogicalPlan] {
+    //FIXME ?
     override def apply(plan: LogicalPlan): LogicalPlan = plan.transformAllExpressions {
       case f: UnresolvedFunction if !catalog.functionExists(f.name) =>
         withPosition(f) {
@@ -1206,6 +1218,7 @@ class Analyzer(
    * Replaces [[UnresolvedFunction]]s with concrete [[Expression]]s.
    */
   object ResolveFunctions extends Rule[LogicalPlan] {
+    //TODO 遍历logicalPlan，并施加规则
     def apply(plan: LogicalPlan): LogicalPlan = plan.transformUp {
       case q: LogicalPlan =>
         q transformExpressions {
@@ -2151,6 +2164,7 @@ class Analyzer(
    * to the given input attributes.
    */
   object ResolveDeserializer extends Rule[LogicalPlan] {
+    //FIXME
     def apply(plan: LogicalPlan): LogicalPlan = plan.transformUp {
       case p if !p.childrenResolved => p
       case p if p.resolved => p

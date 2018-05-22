@@ -87,6 +87,7 @@ private[kafka010] class KafkaSource(
     sc.conf.getTimeAsMs("spark.network.timeout", "120s").toString
   ).toLong
 
+  //TODO 限速参数！！！
   private val maxOffsetsPerTrigger =
     sourceOptions.get("maxOffsetsPerTrigger").map(_.toLong)
 
@@ -128,11 +129,14 @@ private[kafka010] class KafkaSource(
       }
 
     metadataLog.get(0).getOrElse {
+      //TODO 如果hdfs上没有app的元数据（位点信息），则从kafka那边获取位点信息
       val offsets = startingOffsets match {
         case EarliestOffsetRangeLimit => KafkaSourceOffset(kafkaReader.fetchEarliestOffsets())
+            //TODO 通过KafkaOffsetReader.fetchLatestOffsets()获取kafka最新位点
         case LatestOffsetRangeLimit => KafkaSourceOffset(kafkaReader.fetchLatestOffsets())
         case SpecificOffsetRangeLimit(p) => kafkaReader.fetchSpecificOffsets(p, reportDataLoss)
       }
+      //TODO 初始化hdfs:///checkpointPath/xx/sources下的源位点信息
       metadataLog.add(0, offsets)
       logInfo(s"Initial offsets: $offsets")
       offsets
@@ -146,9 +150,12 @@ private[kafka010] class KafkaSource(
   /** Returns the maximum available offset for this source. */
   override def getOffset: Option[Offset] = {
     // Make sure initialPartitionOffsets is initialized
+    //TODO 初始化分区位点
     initialPartitionOffsets
 
     val latest = kafkaReader.fetchLatestOffsets()
+
+    //TODO 进行背压限速操作
     val offsets = maxOffsetsPerTrigger match {
       case None =>
         latest
@@ -158,6 +165,7 @@ private[kafka010] class KafkaSource(
         rateLimit(limit, currentPartitionOffsets.get, latest)
     }
 
+    //TODO 在内存中记录拉取位点值，用于限速
     currentPartitionOffsets = Some(offsets)
     logDebug(s"GetOffset: ${offsets.toSeq.map(_.toString).sorted}")
     Some(KafkaSourceOffset(offsets))
@@ -186,7 +194,8 @@ private[kafka010] class KafkaSource(
         case (tp, end) =>
           tp -> sizes.get(tp).map { size =>
             val begin = from.get(tp).getOrElse(fromNew(tp))
-            val prorate = limit * (size / total)
+            //TODO 限速的大小是所有分区的总和值
+            val prorate = limit * (size / total)//比例
             logDebug(s"rateLimit $tp prorated amount is $prorate")
             // Don't completely starve small topicpartitions
             val off = begin + (if (prorate < 1) Math.ceil(prorate) else Math.floor(prorate)).toLong
@@ -213,6 +222,7 @@ private[kafka010] class KafkaSource(
     if (currentPartitionOffsets.isEmpty) {
       currentPartitionOffsets = Some(untilPartitionOffsets)
     }
+    //FIXME start为空时，直接返回空的rdd
     if (start.isDefined && start.get == end) {
       return sqlContext.internalCreateDataFrame(
         sqlContext.sparkContext.emptyRDD, schema, isStreaming = true)
@@ -252,6 +262,7 @@ private[kafka010] class KafkaSource(
     }.toSeq
     logDebug("TopicPartitions: " + topicPartitions.mkString(", "))
 
+    //TODO 通过rpc接口获取executor地址(ip, port)列表
     val sortedExecutors = getSortedExecutorList(sc)
     val numExecutors = sortedExecutors.length
     logDebug("Sorted executors: " + sortedExecutors.mkString(", "))

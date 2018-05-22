@@ -152,6 +152,7 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
    * Returns a Seq containing the result of applying a partial function to all elements in this
    * tree on which the function is defined.
    */
+  //FIXME
   def collect[B](pf: PartialFunction[BaseType, B]): Seq[B] = {
     val ret = new collection.mutable.ArrayBuffer[B]()
     val lifted = pf.lift
@@ -268,6 +269,7 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
     }
 
     // Check if unchanged and then possibly return old copy to avoid gc churn.
+    //TODO 递归处理子节点
     if (this fastEquals afterRule) {
       mapChildren(_.transformDown(rule))
     } else {
@@ -283,6 +285,7 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
    * @param rule the function use to transform this nodes children
    */
   def transformUp(rule: PartialFunction[BaseType, BaseType]): BaseType = {
+    //TODO 递归处理子节点
     val afterRuleOnChildren = mapChildren(_.transformUp(rule))
     if (this fastEquals afterRuleOnChildren) {
       CurrentOrigin.withOrigin(origin) {

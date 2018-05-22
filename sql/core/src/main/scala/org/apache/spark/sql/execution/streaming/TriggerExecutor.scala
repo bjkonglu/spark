@@ -53,8 +53,10 @@ case class ProcessingTimeExecutor(processingTime: ProcessingTime, clock: Clock =
     while (true) {
       val triggerTimeMs = clock.getTimeMillis
       val nextTriggerTimeMs = nextBatchTime(triggerTimeMs)
+      //TODO 执行逻辑, 如果query状态变成terminated,则退出周期执行逻辑
       val terminated = !triggerHandler()
       if (intervalMs > 0) {
+        //TODO 阻塞等待时间间隔
         val batchElapsedTimeMs = clock.getTimeMillis - triggerTimeMs
         if (batchElapsedTimeMs > intervalMs) {
           notifyBatchFallingBehind(batchElapsedTimeMs)
@@ -64,6 +66,7 @@ case class ProcessingTimeExecutor(processingTime: ProcessingTime, clock: Clock =
         }
         clock.waitTillTime(nextTriggerTimeMs)
       } else {
+        //TODO 如果intervalMs=0,则执行完当前批次立马执行下一个批次
         if (terminated) {
           return
         }

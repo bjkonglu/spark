@@ -574,6 +574,7 @@ class SparkSession private(
       schema.toAttributes,
       catalystRows,
       isStreaming = isStreaming)(self)
+    //TODO 此时的logicalPlan是LogicalRDD
     Dataset.ofRows(self, logicalPlan)
   }
 
@@ -1073,6 +1074,7 @@ object SparkSession extends Logging {
       // invoke `new [Hive]SessionStateBuilder(SparkSession, Option[SessionState])`
       val clazz = Utils.classForName(className)
       val ctor = clazz.getConstructors.head
+      //TODO 通过SessionStateBuilder创建SessionState
       ctor.newInstance(sparkSession, None).asInstanceOf[BaseSessionStateBuilder].build()
     } catch {
       case NonFatal(e) =>

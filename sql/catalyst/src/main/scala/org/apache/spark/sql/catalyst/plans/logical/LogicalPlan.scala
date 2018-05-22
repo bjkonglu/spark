@@ -241,6 +241,7 @@ abstract class LeafNode extends LogicalPlan {
  * A logical plan node with single child.
  */
 abstract class UnaryNode extends LogicalPlan {
+  //TODO 变量存储子logicalPlan
   def child: LogicalPlan
 
   //TODO 将当前逻辑计划添加到容器头部

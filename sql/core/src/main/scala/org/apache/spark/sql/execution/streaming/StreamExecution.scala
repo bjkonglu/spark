@@ -226,7 +226,7 @@ abstract class StreamExecution(
   def start(): Unit = {
     logInfo(s"Starting $prettyIdString. Use $resolvedCheckpointRoot to store the query checkpoint.")
     queryExecutionThread.setDaemon(true)
-    //TODO 开启查询线程
+    //TODO 开启查询线程，一个query一个线程
     queryExecutionThread.start()
     startLatch.await()  // Wait until thread started and QueryStart event has been posted
   }
@@ -264,6 +264,8 @@ abstract class StreamExecution(
 
       updateStatusMessage("Initializing sources")
       // force initialization of the logical plan so that the sources can be created
+
+      //FIXME 初始化数据源，并创建
       logicalPlan
 
       // Isolated spark session to run the batches with.
@@ -525,6 +527,7 @@ abstract class StreamExecution(
     s"Streaming Query $prettyIdString [state = $state]"
   }
 
+  //FIXME 异常栈起点
   private def toDebugString(includeLogicalPlan: Boolean): String = {
     val debugString =
       s"""|=== Streaming Query ===

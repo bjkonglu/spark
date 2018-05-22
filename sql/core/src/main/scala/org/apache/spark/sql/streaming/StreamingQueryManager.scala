@@ -21,9 +21,7 @@ import java.util.UUID
 import javax.annotation.concurrent.GuardedBy
 
 import scala.collection.mutable
-
 import org.apache.hadoop.fs.Path
-
 import org.apache.spark.annotation.InterfaceStability
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.{AnalysisException, DataFrame, SparkSession}
@@ -199,8 +197,10 @@ class StreamingQueryManager private[sql] (sparkSession: SparkSession) extends Lo
       triggerClock: Clock): StreamingQueryWrapper = {
     var deleteCheckpointOnStop = false
     val checkpointLocation = userSpecifiedCheckpointLocation.map { userSpecified =>
+      //TODO 如果通过option[checkpointLocation]指定了checkpointPath
       new Path(userSpecified).toUri.toString
     }.orElse {
+      //TODO 创建checkpointRoot， location是由用户层面传入的
       df.sparkSession.sessionState.conf.checkpointLocation.map { location =>
         new Path(location, userSpecifiedName.getOrElse(UUID.randomUUID().toString)).toUri.toString
       }
@@ -228,6 +228,7 @@ class StreamingQueryManager private[sql] (sparkSession: SparkSession) extends Lo
       }
     }
 
+    //TODO 遍历执行计划
     val analyzedPlan = df.queryExecution.analyzed
     df.queryExecution.assertAnalyzed()
 
@@ -254,6 +255,7 @@ class StreamingQueryManager private[sql] (sparkSession: SparkSession) extends Lo
           outputMode,
           extraOptions,
           deleteCheckpointOnStop))
+      //FIXME
       case _ =>
         new StreamingQueryWrapper(new MicroBatchExecution(
           sparkSession,
@@ -294,7 +296,7 @@ class StreamingQueryManager private[sql] (sparkSession: SparkSession) extends Lo
       outputMode: OutputMode,
       useTempCheckpointLocation: Boolean = false,
       recoverFromCheckpointLocation: Boolean = true,
-      trigger: Trigger = ProcessingTime(0),
+      trigger: Trigger = ProcessingTime(0),//TODO 基于执行时间周期执行查询，如果为0，则query会尽可能快的执行
       triggerClock: Clock = new SystemClock()): StreamingQuery = {
     //TODO 创建query
     val query = createQuery(
@@ -309,6 +311,7 @@ class StreamingQueryManager private[sql] (sparkSession: SparkSession) extends Lo
       trigger,
       triggerClock)
 
+    //TODO 一个应用里面可以进行多个query
     activeQueriesLock.synchronized {
       // Make sure no other query with same name is active
       userSpecifiedName.foreach { name =>

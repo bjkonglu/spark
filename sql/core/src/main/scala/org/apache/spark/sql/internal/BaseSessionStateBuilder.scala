@@ -154,6 +154,7 @@ abstract class BaseSessionStateBuilder(
    *
    * Note: this depends on the `conf` and `catalog` fields.
    */
+  //TODO analyzer的实例化
   protected def analyzer: Analyzer = new Analyzer(catalog, conf) {
     override val extendedResolutionRules: Seq[Rule[LogicalPlan]] =
       new FindDataSourceTable(session) +:
@@ -283,6 +284,7 @@ abstract class BaseSessionStateBuilder(
   /**
    * Build the [[SessionState]].
    */
+  //TODO 创建SessionState
   def build(): SessionState = {
     new SessionState(
       session.sharedState,

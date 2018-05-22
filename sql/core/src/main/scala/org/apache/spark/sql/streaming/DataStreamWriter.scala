@@ -291,6 +291,7 @@ final class DataStreamWriter[T] private[sql](ds: Dataset[T]) {
             className = source,
             options = extraOptions.toMap,
             partitionColumns = normalizedParCols.getOrElse(Nil))
+          //TODO 创建目标数据源sink
           ds.createSink(outputMode)
       }
 

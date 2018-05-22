@@ -157,7 +157,9 @@ object MapElements {
   def apply[T : Encoder, U : Encoder](
       func: AnyRef,
       child: LogicalPlan): LogicalPlan = {
+    //TODO 包含deserialized
     val deserialized = CatalystSerde.deserialize[T](child)
+
     val mapped = MapElements(
       func,
       implicitly[Encoder[T]].clsTag.runtimeClass,

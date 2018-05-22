@@ -90,12 +90,14 @@ private[kafka010] class KafkaSourceProvider extends DataSourceRegister
     val startingStreamOffsets = KafkaSourceProvider.getKafkaOffsetRangeLimit(caseInsensitiveParams,
       STARTING_OFFSETS_OPTION_KEY, LatestOffsetRangeLimit)
 
+    //TODO KafkaOffsetReader封装了KafkaConsumer
     val kafkaOffsetReader = new KafkaOffsetReader(
       strategy(caseInsensitiveParams),
       kafkaParamsForDriver(specifiedKafkaParams),
       parameters,
       driverGroupIdPrefix = s"$uniqueGroupId-driver")
 
+    //TODO 变量metadataPath此处的值为../checkpointPath/sources
     new KafkaSource(
       sqlContext,
       kafkaOffsetReader,
