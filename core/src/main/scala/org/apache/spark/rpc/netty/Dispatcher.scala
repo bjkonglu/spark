@@ -45,8 +45,10 @@ private[netty] class Dispatcher(nettyEnv: NettyRpcEnv, numUsableCores: Int) exte
     val inbox = new Inbox(ref, endpoint)
   }
 
+  //TODO 维护一个HashMap，保存name与EndpointData的关系
   private val endpoints: ConcurrentMap[String, EndpointData] =
     new ConcurrentHashMap[String, EndpointData]
+  //TODO 维护一个HashMap, 保存RpcEndpoint与RpcEndpointRef的关系
   private val endpointRefs: ConcurrentMap[RpcEndpoint, RpcEndpointRef] =
     new ConcurrentHashMap[RpcEndpoint, RpcEndpointRef]
 
@@ -60,20 +62,27 @@ private[netty] class Dispatcher(nettyEnv: NettyRpcEnv, numUsableCores: Int) exte
   @GuardedBy("this")
   private var stopped = false
 
+  //TODO 根据name和RpcEndpoint，在RpcEnv上进行注册
   def registerRpcEndpoint(name: String, endpoint: RpcEndpoint): NettyRpcEndpointRef = {
     val addr = RpcEndpointAddress(nettyEnv.address, name)
+    //TODO 创建对应的NettyRpcEndpointRef
     val endpointRef = new NettyRpcEndpointRef(nettyEnv.conf, addr, nettyEnv)
     synchronized {
       if (stopped) {
         throw new IllegalStateException("RpcEnv has been stopped")
       }
+      //TODO 新建一个EndpointData，里面主要包含一个inbox成员
+      //TODO 将新建的EndpointData和对应的Name添加到endpoints
       if (endpoints.putIfAbsent(name, new EndpointData(name, endpoint, endpointRef)) != null) {
         throw new IllegalArgumentException(s"There is already an RpcEndpoint called $name")
       }
       val data = endpoints.get(name)
+      //TODO 将endpoint和对应的endpointRef添加到endpointRefs中
       endpointRefs.put(data.endpoint, data.ref)
+      //TODO 在receivers中添加新创建的endpointData
       receivers.offer(data)  // for the OnStart message
     }
+    //TODO 返回对应的endpointRef
     endpointRef
   }
 
@@ -108,6 +117,7 @@ private[netty] class Dispatcher(nettyEnv: NettyRpcEnv, numUsableCores: Int) exte
    *
    * This can be used to make network events known to all end points (e.g. "a new node connected").
    */
+  //TODO 向所有已经注册的RpcEndpoint发送消息
   def postToAll(message: InboxMessage): Unit = {
     val iter = endpoints.keySet().iterator()
     while (iter.hasNext) {
@@ -120,14 +130,19 @@ private[netty] class Dispatcher(nettyEnv: NettyRpcEnv, numUsableCores: Int) exte
   }
 
   /** Posts a message sent by a remote endpoint. */
+
+  //TODO 发布一个由远端endpoint发送的消息
   def postRemoteMessage(message: RequestMessage, callback: RpcResponseCallback): Unit = {
+    //TODO rpcCallContext的初始化
     val rpcCallContext =
       new RemoteNettyRpcCallContext(nettyEnv, callback, message.senderAddress)
+
     val rpcMessage = RpcMessage(message.senderAddress, message.content, rpcCallContext)
     postMessage(message.receiver.name, rpcMessage, (e) => callback.onFailure(e))
   }
 
   /** Posts a message sent by a local endpoint. */
+  //TODO 发布一个由本地endpoint发送的消息
   def postLocalMessage(message: RequestMessage, p: Promise[Any]): Unit = {
     val rpcCallContext =
       new LocalNettyRpcCallContext(message.senderAddress, p)
@@ -201,6 +216,7 @@ private[netty] class Dispatcher(nettyEnv: NettyRpcEnv, numUsableCores: Int) exte
       math.max(2, availableCores))
     val pool = ThreadUtils.newDaemonFixedThreadPool(numThreads, "dispatcher-event-loop")
     for (i <- 0 until numThreads) {
+      //TODO 创建多线程，执行相应的MessageLoop
       pool.execute(new MessageLoop)
     }
     pool
@@ -212,12 +228,14 @@ private[netty] class Dispatcher(nettyEnv: NettyRpcEnv, numUsableCores: Int) exte
       try {
         while (true) {
           try {
+            //TODO 从receivers中获取一个endpointData
             val data = receivers.take()
             if (data == PoisonPill) {
               // Put PoisonPill back so that other MessageLoops can see it.
               receivers.offer(PoisonPill)
               return
             }
+            //TODO 调用rpcEndpointData中的inbox的process方法，处理响应的RpcEndpointData中的Message
             data.inbox.process(Dispatcher.this)
           } catch {
             case NonFatal(e) => logError(e.getMessage, e)

@@ -28,6 +28,7 @@ private[netty] class RpcEndpointVerifier(override val rpcEnv: RpcEnv, dispatcher
   extends RpcEndpoint {
 
   override def receiveAndReply(context: RpcCallContext): PartialFunction[Any, Unit] = {
+    //TODO 验证远端是否存在名为name的RpcEndpoint
     case RpcEndpointVerifier.CheckExistence(name) => context.reply(dispatcher.verify(name))
   }
 }

@@ -84,6 +84,7 @@ public class TransportServer implements Closeable {
     return port;
   }
 
+  //TODO 初始化传输层的服务端
   private void init(String hostToBind, int portToBind) {
 
     IOMode ioMode = IOMode.valueOf(conf.ioMode());
@@ -115,9 +116,11 @@ public class TransportServer implements Closeable {
       bootstrap.childOption(ChannelOption.SO_SNDBUF, conf.sendBuf());
     }
 
+    //TODO 设置处理方法
     bootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
       @Override
       protected void initChannel(SocketChannel ch) {
+        //FIXME 服务端的handler实例为NettyRpcHandler
         RpcHandler rpcHandler = appRpcHandler;
         for (TransportServerBootstrap bootstrap : bootstraps) {
           rpcHandler = bootstrap.doBootstrap(ch, rpcHandler);
@@ -128,6 +131,7 @@ public class TransportServer implements Closeable {
 
     InetSocketAddress address = hostToBind == null ?
         new InetSocketAddress(portToBind): new InetSocketAddress(hostToBind, portToBind);
+    //FIXME 服务开始监听端口
     channelFuture = bootstrap.bind(address);
     channelFuture.syncUninterruptibly();
 

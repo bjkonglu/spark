@@ -139,6 +139,8 @@ public class TransportContext {
    * be used to communicate on this channel. The TransportClient is directly associated with a
    * ChannelHandler to ensure all users of the same channel get the same TransportClient object.
    */
+
+  //TODO 初始化通新隧道，并设置处理消息的handler
   public TransportChannelHandler initializePipeline(
       SocketChannel channel,
       RpcHandler channelRpcHandler) {
@@ -165,6 +167,7 @@ public class TransportContext {
    * properties (such as the remoteAddress()) may not be available yet.
    */
   private TransportChannelHandler createChannelHandler(Channel channel, RpcHandler rpcHandler) {
+    //TODO 初始化新的响应handler
     TransportResponseHandler responseHandler = new TransportResponseHandler(channel);
     TransportClient client = new TransportClient(channel, responseHandler);
     TransportRequestHandler requestHandler = new TransportRequestHandler(channel, client,

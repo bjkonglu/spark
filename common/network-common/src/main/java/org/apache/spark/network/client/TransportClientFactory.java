@@ -98,7 +98,9 @@ public class TransportClientFactory implements Closeable {
     this.rand = new Random();
 
     IOMode ioMode = IOMode.valueOf(conf.ioMode());
+    //TODO 采用NIO通信模型，NioSocketChannel
     this.socketChannelClass = NettyUtils.getClientChannelClass(ioMode);
+    //TODO 创建工作组，NioEventLoopGroup
     this.workerGroup = NettyUtils.createEventLoop(
         ioMode,
         conf.clientThreads(),
@@ -184,6 +186,7 @@ public class TransportClientFactory implements Closeable {
           logger.info("Found inactive connection to {}, creating a new one.", resolvedAddress);
         }
       }
+      //FIXME 通过ip/port创建通信客户端
       clientPool.clients[clientIndex] = createClient(resolvedAddress);
       return clientPool.clients[clientIndex];
     }
@@ -206,6 +209,7 @@ public class TransportClientFactory implements Closeable {
       throws IOException, InterruptedException {
     logger.debug("Creating new connection to {}", address);
 
+    //TODO 引导程序
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.group(workerGroup)
       .channel(socketChannelClass)
@@ -226,10 +230,13 @@ public class TransportClientFactory implements Closeable {
     final AtomicReference<TransportClient> clientRef = new AtomicReference<>();
     final AtomicReference<Channel> channelRef = new AtomicReference<>();
 
+
     bootstrap.handler(new ChannelInitializer<SocketChannel>() {
       @Override
       public void initChannel(SocketChannel ch) {
+        //FIXME 设置客户端handler, handler的实例为NettyRpcHandler
         TransportChannelHandler clientHandler = context.initializePipeline(ch);
+        //TODO 获取客户端和通道句柄
         clientRef.set(clientHandler.getClient());
         channelRef.set(ch);
       }
@@ -237,6 +244,7 @@ public class TransportClientFactory implements Closeable {
 
     // Connect to the remote server
     long preConnect = System.nanoTime();
+    //TODO 进行通信连接
     ChannelFuture cf = bootstrap.connect(address);
     if (!cf.await(conf.connectionTimeoutMs())) {
       throw new IOException(

@@ -54,6 +54,8 @@ private[netty] case class RemoteProcessConnectionError(cause: Throwable, remoteA
 /**
  * An inbox that stores messages for an [[RpcEndpoint]] and posts messages to it thread-safely.
  */
+
+//TODO 收信信箱
 private[netty] class Inbox(
     val endpointRef: NettyRpcEndpointRef,
     val endpoint: RpcEndpoint)
@@ -78,12 +80,15 @@ private[netty] class Inbox(
 
   // OnStart should be the first message to process
   inbox.synchronized {
+    //FIXME 初始化收件信箱时，添加启动事件消息
     messages.add(OnStart)
   }
 
   /**
    * Process stored messages.
    */
+
+  //TODO 处理收信信箱中的消息
   def process(dispatcher: Dispatcher): Unit = {
     var message: InboxMessage = null
     inbox.synchronized {
@@ -97,6 +102,7 @@ private[netty] class Inbox(
         return
       }
     }
+    //TODO 对message进行匹配，然后执行
     while (true) {
       safelyCall(endpoint) {
         message match {

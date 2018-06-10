@@ -62,6 +62,7 @@ private[netty] class RemoteNettyRpcCallContext(
 
   override protected def send(message: Any): Unit = {
     val reply = nettyEnv.serialize(message)
+    //TODO 通过回调函数里面的channel将消息返回给发送者
     callback.onSuccess(reply)
   }
 }

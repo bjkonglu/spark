@@ -115,6 +115,7 @@ public class TransportChannelHandler extends ChannelInboundHandlerAdapter {
   @Override
   public void channelRead(ChannelHandlerContext ctx, Object request) throws Exception {
     if (request instanceof RequestMessage) {
+      //FIXME 处理消息请求
       requestHandler.handle((RequestMessage) request);
     } else if (request instanceof ResponseMessage) {
       responseHandler.handle((ResponseMessage) request);

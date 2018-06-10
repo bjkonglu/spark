@@ -1041,6 +1041,7 @@ private[deploy] object Master extends Logging {
   val SYSTEM_NAME = "sparkMaster"
   val ENDPOINT_NAME = "Master"
 
+  //TODO 由脚本spark-master.sh启动
   def main(argStrings: Array[String]) {
     Thread.setDefaultUncaughtExceptionHandler(new SparkUncaughtExceptionHandler(
       exitOnUncaughtException = false))

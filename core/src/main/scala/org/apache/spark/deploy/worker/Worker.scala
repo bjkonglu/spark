@@ -204,6 +204,7 @@ private[deploy] class Worker(
     webUi.bind()
 
     workerWebUiUrl = s"http://$publicAddress:${webUi.boundPort}"
+    //TODO 向Master进行注册
     registerWithMaster()
 
     metricsSystem.registerSource(workerSource)
@@ -240,6 +241,8 @@ private[deploy] class Worker(
         override def run(): Unit = {
           try {
             logInfo("Connecting to master " + masterAddress + "...")
+            //TODO 先先新建一个MasterEndpointRef,然后用名称去master上确认是否存在MasterEndpointRef，存在则返回新建的MasterEndpointRef
+            //TODO 然后用MasterEndpointRef与master端的MasterEndpoint进行通信
             val masterEndpoint = rpcEnv.setupEndpointRef(masterAddress, Master.ENDPOINT_NAME)
             sendRegisterMessageToMaster(masterEndpoint)
           } catch {
@@ -382,7 +385,7 @@ private[deploy] class Worker(
       workerId,
       host,
       port,
-      self,
+      self,//workerEndpointRef
       cores,
       memory,
       workerWebUiUrl,
@@ -401,6 +404,7 @@ private[deploy] class Worker(
         changeMaster(masterRef, masterWebUiUrl, masterAddress)
         forwordMessageScheduler.scheduleAtFixedRate(new Runnable {
           override def run(): Unit = Utils.tryLogNonFatalError {
+            //TODO 周期性发送worker心跳信息
             self.send(SendHeartbeat)
           }
         }, 0, HEARTBEAT_MILLIS, TimeUnit.MILLISECONDS)
@@ -435,6 +439,7 @@ private[deploy] class Worker(
       handleRegisterResponse(msg)
 
     case SendHeartbeat =>
+      //TODO 如果worker与master之间保持连接，则想master发送心跳信息
       if (connected) { sendToMaster(Heartbeat(workerId, self)) }
 
     case WorkDirCleanup =>
@@ -746,6 +751,7 @@ private[deploy] object Worker extends Logging {
   val SYSTEM_NAME = "sparkWorker"
   val ENDPOINT_NAME = "Worker"
 
+  //TODO 由脚本spark-slave.sh启动
   def main(argStrings: Array[String]) {
     Thread.setDefaultUncaughtExceptionHandler(new SparkUncaughtExceptionHandler(
       exitOnUncaughtException = false))

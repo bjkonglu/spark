@@ -104,6 +104,7 @@ public class TransportRequestHandler extends MessageHandler<RequestMessage> {
   }
 
   @Override
+  //TODO 针对不同的消息类型进行处理
   public void handle(RequestMessage request) {
     if (request instanceof ChunkFetchRequest) {
       processFetchRequest((ChunkFetchRequest) request);
@@ -187,6 +188,7 @@ public class TransportRequestHandler extends MessageHandler<RequestMessage> {
       rpcHandler.receive(reverseClient, req.body().nioByteBuffer(), new RpcResponseCallback() {
         @Override
         public void onSuccess(ByteBuffer response) {
+          //TODO 响应消息返回给发送者
           respond(new RpcResponse(req.requestId, new NioManagedBuffer(response)));
         }
 
@@ -219,6 +221,7 @@ public class TransportRequestHandler extends MessageHandler<RequestMessage> {
    */
   private ChannelFuture respond(Encodable result) {
     SocketAddress remoteAddress = channel.remoteAddress();
+    //TODO 将响应消息通过之前建立的隧道发送给发送者
     return channel.writeAndFlush(result).addListener(future -> {
       if (future.isSuccess()) {
         logger.trace("Sent result {} to client {}", result, remoteAddress);

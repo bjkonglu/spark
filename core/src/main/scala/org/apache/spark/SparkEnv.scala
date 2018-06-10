@@ -246,6 +246,7 @@ object SparkEnv extends Logging {
     }
 
     val systemName = if (isDriver) driverSystemName else executorSystemName
+    //TODO 创建Rpc环境
     val rpcEnv = RpcEnv.create(systemName, bindAddress, advertiseAddress, port.getOrElse(-1), conf,
       securityManager, numUsableCores, !isDriver)
 

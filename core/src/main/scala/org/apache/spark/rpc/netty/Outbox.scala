@@ -63,6 +63,7 @@ private[netty] case class RpcOutboxMessage(
 
   override def sendWith(client: TransportClient): Unit = {
     this.client = client
+    //TODO 通过客户端发送rpc消息
     this.requestId = client.sendRpc(content, this)
   }
 
@@ -79,6 +80,7 @@ private[netty] case class RpcOutboxMessage(
   }
 
   override def onSuccess(response: ByteBuffer): Unit = {
+    //TODO 处理响应消息
     _onSuccess(client, response)
   }
 
@@ -147,6 +149,7 @@ private[netty] class Outbox(nettyEnv: NettyRpcEnv, val address: RpcAddress) {
       }
       if (client == null) {
         // There is no connect task but client is null, so we need to launch the connect task.
+        //TODO 新建通信客户端
         launchConnectTask()
         return
       }
@@ -164,6 +167,7 @@ private[netty] class Outbox(nettyEnv: NettyRpcEnv, val address: RpcAddress) {
       try {
         val _client = synchronized { client }
         if (_client != null) {
+          //TODO 开始发送消息
           message.sendWith(_client)
         } else {
           assert(stopped == true)
@@ -191,6 +195,7 @@ private[netty] class Outbox(nettyEnv: NettyRpcEnv, val address: RpcAddress) {
 
       override def call(): Unit = {
         try {
+          //TODO 通过nettyEnv创建传输层客户端，其中地址是由RpcEndpointRef持有的Endpoint的通行地址
           val _client = nettyEnv.createClient(address)
           outbox.synchronized {
             client = _client
