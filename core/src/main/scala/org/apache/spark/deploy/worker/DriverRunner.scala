@@ -152,6 +152,10 @@ private[deploy] class DriverRunner(
     val localJarFile = new File(driverDir, jarFileName)
     if (!localJarFile.exists()) { // May already exist if running multiple workers on one node
       logInfo(s"Copying user jar ${driverDesc.jarUrl} to $localJarFile")
+
+      //TODO 通过jarUrl获取app.jar文件，当任务部署模式是client时，driver进程在提交端执行；而任务部署模式是cluster时，driver在任意一个符合条件的节点上
+      //TODO 而启动driver进程需要依赖app.jar，所以在cluster模式下，一个方式是将app.jar放在hdfs上，提交任务时提供app.jar的hdfs路径就行；二是将app.jar
+      //TODO 分发到各个节点上的执行目录下
       Utils.fetchFile(
         driverDesc.jarUrl,
         driverDir,
@@ -170,6 +174,7 @@ private[deploy] class DriverRunner(
 
   private[worker] def prepareAndRunDriver(): Int = {
     val driverDir = createWorkingDirectory()
+    //TODO 下载driver依赖的app.jar
     val localJarFilename = downloadUserJar(driverDir)
 
     def substituteVariables(argument: String): String = argument match {
@@ -179,6 +184,8 @@ private[deploy] class DriverRunner(
     }
 
     // TODO: If we add ability to submit multiple jars they should also be added here
+
+    //TODO 创建driver的执行cmd
     val builder = CommandUtils.buildProcessBuilder(driverDesc.command, securityManager,
       driverDesc.mem, sparkHome.getAbsolutePath, substituteVariables)
 
@@ -215,6 +222,7 @@ private[deploy] class DriverRunner(
 
       synchronized {
         if (killed) { return exitCode }
+        //TODO 执行命令行启动java进程，org.apache.spark.deploy.worker.DriverWrapper
         process = Some(command.start())
         initialize(process.get)
       }

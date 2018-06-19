@@ -31,6 +31,8 @@ import org.apache.spark.util._
  * Utility object for launching driver programs such that they share fate with the Worker process.
  * This is used in standalone cluster mode only.
  */
+
+//TODO Driver进程类
 object DriverWrapper extends Logging {
   def main(args: Array[String]) {
     args.toList match {
@@ -44,6 +46,7 @@ object DriverWrapper extends Logging {
         val conf = new SparkConf()
         val host: String = Utils.localHostName()
         val port: Int = sys.props.getOrElse("spark.driver.port", "0").toInt
+        //TODO 创建rpcEnv
         val rpcEnv = RpcEnv.create("Driver", host, port, conf, new SecurityManager(conf))
         logInfo(s"Driver address: ${rpcEnv.address}")
         rpcEnv.setupEndpoint("workerWatcher", new WorkerWatcher(rpcEnv, workerUrl))
@@ -60,7 +63,9 @@ object DriverWrapper extends Logging {
         setupDependencies(loader, userJar)
 
         // Delegate to supplied main class
+        //TODO 加载用户代码主类
         val clazz = Utils.classForName(mainClass)
+        //TODO 通过反射机制运行用户代码主类
         val mainMethod = clazz.getMethod("main", classOf[Array[String]])
         mainMethod.invoke(null, extraArgs.toArray[String])
 

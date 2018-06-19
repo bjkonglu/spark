@@ -61,6 +61,7 @@ private class ClientEndpoint(
    private var activeMasterEndpoint: RpcEndpointRef = null
 
   override def onStart(): Unit = {
+    //TODO 客户端的Endpoint启动
     driverArgs.cmd match {
       case "launch" =>
         // TODO: We could add an env variable here and intercept it in `sc.addJar` that would
@@ -83,16 +84,19 @@ private class ClientEndpoint(
           .map(Utils.splitCommandString).getOrElse(Seq.empty)
         val sparkJavaOpts = Utils.sparkJavaOpts(conf)
         val javaOpts = sparkJavaOpts ++ extraJavaOpts
+        //TODO 启动命令
         val command = new Command(mainClass,
           Seq("{{WORKER_URL}}", "{{USER_JAR}}", driverArgs.mainClass) ++ driverArgs.driverOptions,
           sys.env, classPathEntries, libraryPathEntries, javaOpts)
 
+        //TODO driver启动资源和命令描述
         val driverDescription = new DriverDescription(
           driverArgs.jarUrl,
           driverArgs.memory,
           driverArgs.cores,
           driverArgs.supervise,
           command)
+        //TODO 给Master发送任务信息请求
         asyncSendToMasterAndForwardReply[SubmitDriverResponse](
           RequestSubmitDriver(driverDescription))
 
@@ -223,6 +227,7 @@ object Client {
 
 private[spark] class ClientApp extends SparkApplication {
 
+  //TODO RPC方式提交任务
   override def start(args: Array[String], conf: SparkConf): Unit = {
     val driverArgs = new ClientArguments(args)
 
@@ -231,9 +236,11 @@ private[spark] class ClientApp extends SparkApplication {
     }
     Logger.getRootLogger.setLevel(driverArgs.logLevel)
 
+    //TODO 创建rpcEnv
     val rpcEnv =
       RpcEnv.create("driverClient", Utils.localHostName(), 0, conf, new SecurityManager(conf))
 
+    //TODO 获取masterEndpointRef，即master的通信端点
     val masterEndpoints = driverArgs.masters.map(RpcAddress.fromSparkURL).
       map(rpcEnv.setupEndpointRef(_, Master.ENDPOINT_NAME))
     rpcEnv.setupEndpoint("client", new ClientEndpoint(rpcEnv, driverArgs, masterEndpoints, conf))

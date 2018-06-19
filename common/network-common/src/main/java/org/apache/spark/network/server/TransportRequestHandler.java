@@ -185,10 +185,11 @@ public class TransportRequestHandler extends MessageHandler<RequestMessage> {
 
   private void processRpcRequest(final RpcRequest req) {
     try {
+      //FIXME 通过回调函数RpcResponseCallback，来回复客户端的请求
       rpcHandler.receive(reverseClient, req.body().nioByteBuffer(), new RpcResponseCallback() {
         @Override
         public void onSuccess(ByteBuffer response) {
-          //TODO 响应消息返回给发送者
+          //TODO 使用客户端[channel]将响应消息返回给发送者
           respond(new RpcResponse(req.requestId, new NioManagedBuffer(response)));
         }
 

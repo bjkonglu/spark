@@ -114,6 +114,7 @@ public class TransportChannelHandler extends ChannelInboundHandlerAdapter {
 
   @Override
   public void channelRead(ChannelHandlerContext ctx, Object request) throws Exception {
+    //FIXME NETTY-NIO消息处理入口
     if (request instanceof RequestMessage) {
       //FIXME 处理消息请求
       requestHandler.handle((RequestMessage) request);

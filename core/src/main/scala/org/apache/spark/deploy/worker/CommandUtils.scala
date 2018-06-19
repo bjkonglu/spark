@@ -93,7 +93,7 @@ object CommandUtils extends Logging {
 
     Command(
       command.mainClass,
-      command.arguments.map(substituteArguments),
+      command.arguments.map(substituteArguments),//TODO 用计算得到的值替换{{WORKER_URL}}、{{USER_JAR}}
       newEnvironment,
       command.classPathEntries ++ classPath,
       Seq.empty, // library path already captured in environment variable

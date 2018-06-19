@@ -89,7 +89,7 @@ public class TransportServer implements Closeable {
 
     IOMode ioMode = IOMode.valueOf(conf.ioMode());
     EventLoopGroup bossGroup =
-      NettyUtils.createEventLoop(ioMode, conf.serverThreads(), conf.getModuleName() + "-server");
+      NettyUtils.createEventLoop(ioMode, conf.serverThreads(), conf.getModuleName() + "-server");//moduleName: shuffle
     EventLoopGroup workerGroup = bossGroup;
 
     PooledByteBufAllocator allocator = NettyUtils.createPooledByteBufAllocator(
@@ -131,7 +131,7 @@ public class TransportServer implements Closeable {
 
     InetSocketAddress address = hostToBind == null ?
         new InetSocketAddress(portToBind): new InetSocketAddress(hostToBind, portToBind);
-    //FIXME 服务开始监听端口
+    //FIXME 服务开始监听端口, 启动服务
     channelFuture = bootstrap.bind(address);
     channelFuture.syncUninterruptibly();
 

@@ -136,6 +136,7 @@ class SparkSubmitOptionParser {
    * @throws IllegalArgumentException If an error is found during parsing.
    */
   protected final void parse(List<String> args) {
+    //TODO 匹配"="分割的选项
     Pattern eqSeparatedOpt = Pattern.compile("(--[^=]+)=(.+)");
 
     int idx = 0;
@@ -160,6 +161,7 @@ class SparkSubmitOptionParser {
           idx++;
           value = args.get(idx);
         }
+        //TODO 处理option以及它对应的value, 根据多态特性调用不同实现完成参数处理
         if (!handle(name, value)) {
           break;
         }
@@ -175,6 +177,8 @@ class SparkSubmitOptionParser {
         continue;
       }
 
+      //FIXME 处理中间不识别的参数，当errorOnUnknownArgs设置为true，则中间遇到非"-"开头的参数，则退出循环
+      //FIXME 同时将该选项作为appResource/primaryResource
       if (!handleUnknown(arg)) {
         break;
       }
@@ -183,6 +187,7 @@ class SparkSubmitOptionParser {
     if (idx < args.size()) {
       idx++;
     }
+    //TODO 将结尾的参数直接作为app的入参
     handleExtraArgs(args.subList(idx, args.size()));
   }
 

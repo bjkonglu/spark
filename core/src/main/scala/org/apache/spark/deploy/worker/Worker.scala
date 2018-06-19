@@ -534,6 +534,7 @@ private[deploy] class Worker(
             conf,
             appLocalDirs, ExecutorState.RUNNING)
           executors(appId + "/" + execId) = manager
+          //TODO 启动executor进程
           manager.start()
           coresUsed += cores_
           memoryUsed += memory_
@@ -578,7 +579,9 @@ private[deploy] class Worker(
         self,
         workerUri,
         securityMgr)
+      //TODO 记录driver对象，方便对driver进行操作
       drivers(driverId) = driver
+      //TODO 启动Driver进程
       driver.start()
 
       coresUsed += driverDesc.cores

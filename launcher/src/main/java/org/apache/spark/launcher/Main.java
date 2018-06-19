@@ -57,6 +57,7 @@ class Main {
     AbstractCommandBuilder builder;
     if (className.equals("org.apache.spark.deploy.SparkSubmit")) {
       try {
+        //TODO cmd构建
         builder = new SparkSubmitCommandBuilder(args);
       } catch (IllegalArgumentException e) {
         printLaunchCommand = false;
@@ -93,6 +94,7 @@ class Main {
       System.out.println(prepareWindowsCommand(cmd, env));
     } else {
       // In bash, use NULL as the arg separator since it cannot be used in an argument.
+      //TODO 将拼接的命令输出，被spark-class脚本逻辑接收并处理
       List<String> bashCmd = prepareBashCommand(cmd, env);
       for (String c : bashCmd) {
         System.out.print(c);

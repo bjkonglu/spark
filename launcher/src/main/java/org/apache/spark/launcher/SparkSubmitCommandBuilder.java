@@ -142,7 +142,9 @@ class SparkSubmitCommandBuilder extends AbstractCommandBuilder {
       }
 
       this.isExample = isExample;
+      //TODO 构建选项解析器
       OptionParser parser = new OptionParser(true);
+      //TODO 解析提交参数
       parser.parse(submitArgs);
       this.requiresAppResource = parser.requiresAppResource;
     } else {
@@ -159,6 +161,7 @@ class SparkSubmitCommandBuilder extends AbstractCommandBuilder {
     } else if (SPARKR_SHELL.equals(appResource) && requiresAppResource) {
       return buildSparkRCommand(env);
     } else {
+      //TODO 正常构建命令
       return buildSparkSubmitCommand(env);
     }
   }
@@ -256,6 +259,7 @@ class SparkSubmitCommandBuilder extends AbstractCommandBuilder {
     boolean isClientMode = isClientMode(config);
     String extraClassPath = isClientMode ? config.get(SparkLauncher.DRIVER_EXTRA_CLASSPATH) : null;
 
+    //TODO 创建java cmd， 包括jvm参数配置以及classpath
     List<String> cmd = buildJavaCommand(extraClassPath);
     // Take Thrift Server as daemon
     if (isThriftServer(mainClass)) {
@@ -293,6 +297,7 @@ class SparkSubmitCommandBuilder extends AbstractCommandBuilder {
     }
 
     cmd.add("org.apache.spark.deploy.SparkSubmit");
+    //TODO 添加spark submit参数
     cmd.addAll(buildSparkSubmitArgs());
     return cmd;
   }

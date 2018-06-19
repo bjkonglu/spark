@@ -75,6 +75,8 @@ build_command() {
 # Turn off posix mode since it does not allow process substitution
 set +o posix
 CMD=()
+
+# 将org.apache.spark.launcher.Main输出结果存储在CMD数组里
 while IFS= read -d '' -r ARG; do
   CMD+=("$ARG")
 done < <(build_command "$@")

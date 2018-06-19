@@ -77,12 +77,13 @@ private[spark] class SparkSubmit extends Logging {
     // be reset before the application starts.
     val uninitLog = initializeLogIfNecessary(true, silent = true)
 
+    //TODO 解析spark submit 参数
     val appArgs = parseArguments(args)
     if (appArgs.verbose) {
       logInfo(appArgs.toString)
     }
     appArgs.action match {
-      case SparkSubmitAction.SUBMIT => submit(appArgs, uninitLog)
+      case SparkSubmitAction.SUBMIT => submit(appArgs, uninitLog) //提交任务
       case SparkSubmitAction.KILL => kill(appArgs)
       case SparkSubmitAction.REQUEST_STATUS => requestStatus(appArgs)
       case SparkSubmitAction.PRINT_VERSION => printVersion()
@@ -163,6 +164,7 @@ private[spark] class SparkSubmit extends Logging {
             }
         }
       } else {
+        //TODO 执行提交客户端命令
         runMain(childArgs, childClasspath, sparkConf, childMainClass, args.verbose)
       }
     }
@@ -179,7 +181,9 @@ private[spark] class SparkSubmit extends Logging {
     // to use the legacy gateway if the master endpoint turns out to be not a REST server.
     if (args.isStandaloneCluster && args.useRest) {
       try {
+        //FIXME ?
         logInfo("Running Spark using the REST application submission protocol.")
+        doRunMain() //add by lukong
       } catch {
         // Fail over to use the legacy submission gateway
         case e: SubmitRestConnectionException =>
@@ -573,6 +577,7 @@ private[spark] class SparkSubmit extends Logging {
     // In client mode, launch the application main class directly
     // In addition, add the main application jar and any added jars (if any) to the classpath
     if (deployMode == CLIENT) {
+      //TODO 如果是客户端模式，直接运行应用的主类
       childMainClass = args.mainClass
       if (localPrimaryResource != null && isUserJar(localPrimaryResource)) {
         childClasspath += localPrimaryResource
@@ -622,6 +627,8 @@ private[spark] class SparkSubmit extends Logging {
 
     // In standalone cluster mode, use the REST client to submit the application (Spark 1.3+).
     // All Spark parameters are expected to be passed to the client through system properties.
+
+    //TODO standalone-cluster模式下提交任务
     if (args.isStandaloneCluster) {
       if (args.useRest) {
         childMainClass = REST_CLUSTER_SUBMIT_CLASS
@@ -632,6 +639,7 @@ private[spark] class SparkSubmit extends Logging {
         if (args.supervise) { childArgs += "--supervise" }
         Option(args.driverMemory).foreach { m => childArgs += ("--memory", m) }
         Option(args.driverCores).foreach { c => childArgs += ("--cores", c) }
+        //TODO 增加launch参数
         childArgs += "launch"
         childArgs += (args.master, args.primaryResource, args.mainClass)
       }
@@ -815,6 +823,7 @@ private[spark] class SparkSubmit extends Logging {
     }
 
     val app: SparkApplication = if (classOf[SparkApplication].isAssignableFrom(mainClass)) {
+      //TODO 实例化客户端对象
       mainClass.newInstance().asInstanceOf[SparkApplication]
     } else {
       // SPARK-4170
@@ -835,6 +844,7 @@ private[spark] class SparkSubmit extends Logging {
     }
 
     try {
+      //TODO 启动客户端
       app.start(childArgs.toArray, sparkConf)
     } catch {
       case t: Throwable =>
@@ -921,6 +931,7 @@ object SparkSubmit extends CommandLineUtils with Logging {
 
     }
 
+    //TODO 提交spark submit 参数
     submit.doSubmit(args)
   }
 

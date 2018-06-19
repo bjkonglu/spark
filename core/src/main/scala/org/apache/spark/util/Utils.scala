@@ -468,6 +468,7 @@ private[spark] object Utils extends Logging {
       val cachedFile = new File(localDir, cachedFileName)
       try {
         if (!cachedFile.exists()) {
+          //TODO 根据url去获取app.jar文件
           doFetchFile(url, localDir, cachedFileName, conf, securityMgr, hadoopConf)
         }
       } finally {
@@ -685,6 +686,7 @@ private[spark] object Utils extends Logging {
         val sourceFile = if (uri.isAbsolute) new File(uri) else new File(url)
         copyFile(url, sourceFile, targetFile, fileOverwrite)
       case _ =>
+        //TODO 从hdfs文件里获取app.jar
         val fs = getHadoopFileSystem(uri, hadoopConf)
         val path = new Path(uri)
         fetchHcfsFile(path, targetDir, fs, conf, hadoopConf, fileOverwrite,

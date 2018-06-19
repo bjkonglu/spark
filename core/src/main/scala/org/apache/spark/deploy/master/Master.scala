@@ -246,6 +246,7 @@ private[deploy] class Master(
         if (registerWorker(worker)) {
           persistenceEngine.addWorker(worker)
           workerRef.send(RegisteredWorker(self, masterWebUiUrl, masterAddress))
+          //TODO 分配任务给Worker
           schedule()
         } else {
           val workerAddress = worker.endpoint.address
@@ -256,6 +257,7 @@ private[deploy] class Master(
         }
       }
 
+      //FIXME Driver启动后会创建AppClient向Master发出RegisterApplication RPC消息注册应用
     case RegisterApplication(description, driver) =>
       // TODO Prevent repeated registrations from some driver
       if (state == RecoveryState.STANDBY) {
@@ -263,10 +265,12 @@ private[deploy] class Master(
       } else {
         logInfo("Registering app " + description.name)
         val app = createApplication(description, driver)
+        //FIXME 注册app
         registerApplication(app)
         logInfo("Registered app " + description.name + " with ID " + app.id)
         persistenceEngine.addApplication(app)
         driver.send(RegisteredApplication(app.id, self))
+        //TODO 给driver和executor分配Worker
         schedule()
       }
 
@@ -417,6 +421,7 @@ private[deploy] class Master(
           "Can only accept driver submissions in ALIVE state."
         context.reply(SubmitDriverResponse(self, false, None, msg))
       } else {
+        //TODO 处理客户端发送的任务请求
         logInfo("Driver submitted " + description.command.mainClass)
         val driver = createDriver(description)
         persistenceEngine.addDriver(driver)
@@ -679,6 +684,7 @@ private[deploy] class Master(
 
         // Now that we've decided how many cores to allocate on each worker, let's allocate them
         for (pos <- 0 until usableWorkers.length if assignedCores(pos) > 0) {
+          //TODO 给每个worker分配资源
           allocateWorkerResourceToExecutors(
             app, assignedCores(pos), app.desc.coresPerExecutor, usableWorkers(pos))
         }
@@ -705,6 +711,7 @@ private[deploy] class Master(
     val coresToAssign = coresPerExecutor.getOrElse(assignedCores)
     for (i <- 1 to numExecutors) {
       val exec = app.addExecutor(worker, coresToAssign)
+      //TODO 在worker上启动executor
       launchExecutor(worker, exec)
       app.state = ApplicationState.RUNNING
     }
@@ -732,6 +739,7 @@ private[deploy] class Master(
         val worker = shuffledAliveWorkers(curPos)
         numWorkersVisited += 1
         if (worker.memoryFree >= driver.desc.mem && worker.coresFree >= driver.desc.cores) {
+          //TODO 启动app-driver
           launchDriver(worker, driver)
           waitingDrivers -= driver
           launched = true
@@ -739,14 +747,17 @@ private[deploy] class Master(
         curPos = (curPos + 1) % numWorkersAlive
       }
     }
+    //TODO 启动app-executor
     startExecutorsOnWorkers()
   }
 
-  private def launchExecutor(worker: WorkerInfo, exec: ExecutorDesc): Unit = {
+   private def launchExecutor(worker: WorkerInfo, exec: ExecutorDesc): Unit = {
     logInfo("Launching executor " + exec.fullId + " on worker " + worker.id)
     worker.addExecutor(exec)
+     //TODO 让worker启动executor
     worker.endpoint.send(LaunchExecutor(masterUrl,
       exec.application.id, exec.id, exec.application.desc, exec.cores, exec.memory))
+     //TODO 告诉应用的driver增加了一个executor
     exec.application.driver.send(
       ExecutorAdded(exec.id, worker.id, worker.hostPort, exec.cores, exec.memory))
   }
@@ -845,6 +856,7 @@ private[deploy] class Master(
     idToApp(app.id) = app
     endpointToApp(app.driver) = app
     addressToApp(appAddress) = app
+    //TODO 将应用加入队列里，等待处理
     waitingApps += app
   }
 

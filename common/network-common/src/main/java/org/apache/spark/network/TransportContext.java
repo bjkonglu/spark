@@ -140,11 +140,12 @@ public class TransportContext {
    * ChannelHandler to ensure all users of the same channel get the same TransportClient object.
    */
 
-  //TODO 初始化通新隧道，并设置处理消息的handler
+  //TODO 初始化隧道，并设置处理消息的handler
   public TransportChannelHandler initializePipeline(
       SocketChannel channel,
       RpcHandler channelRpcHandler) {
     try {
+      //FIXME 根据消息处理的handler创建每个channel的handler
       TransportChannelHandler channelHandler = createChannelHandler(channel, channelRpcHandler);
       channel.pipeline()
         .addLast("encoder", ENCODER)
@@ -169,9 +170,12 @@ public class TransportContext {
   private TransportChannelHandler createChannelHandler(Channel channel, RpcHandler rpcHandler) {
     //TODO 初始化新的响应handler
     TransportResponseHandler responseHandler = new TransportResponseHandler(channel);
+    //TODO 相同channel下的传输客户端
     TransportClient client = new TransportClient(channel, responseHandler);
+    //TODO 初始化新的请求handler
     TransportRequestHandler requestHandler = new TransportRequestHandler(channel, client,
       rpcHandler, conf.maxChunksBeingTransferred());
+
     return new TransportChannelHandler(client, responseHandler, requestHandler,
       conf.connectionTimeoutMs(), closeIdleConnections);
   }

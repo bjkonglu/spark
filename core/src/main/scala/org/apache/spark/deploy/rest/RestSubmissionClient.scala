@@ -87,6 +87,7 @@ private[spark] class RestSubmissionClient(master: String) extends Logging {
       validateMaster(m)
       val url = getSubmitUrl(m)
       try {
+        //TODO 通过http协议将任务提交到集群
         response = postJson(url, request.toJson)
         response match {
           case s: CreateSubmissionResponse =>
@@ -428,6 +429,8 @@ private[spark] class RestSubmissionClientApp extends SparkApplication {
       appResource, mainClass, appArgs, sparkProperties, env)
     client.createSubmission(submitRequest)
   }
+
+  //FIXME REST方式提交任务
 
   override def start(args: Array[String], conf: SparkConf): Unit = {
     if (args.length < 2) {

@@ -111,8 +111,10 @@ private[spark] class StandaloneSchedulerBackend(
       } else {
         None
       }
+    //TODO 创建应用信息
     val appDesc = ApplicationDescription(sc.appName, maxCores, sc.executorMemory, command,
       webUrl, sc.eventLogDir, sc.eventLogCodec, coresPerExecutor, initialExecutorLimit)
+    //TODO 创建AppClient
     client = new StandaloneAppClient(sc.env.rpcEnv, masters, appDesc, this, conf)
     client.start()
     launcherBackend.setState(SparkAppHandle.State.SUBMITTED)

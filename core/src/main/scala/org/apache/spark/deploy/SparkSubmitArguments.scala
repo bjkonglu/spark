@@ -58,7 +58,7 @@ private[deploy] class SparkSubmitArguments(args: Seq[String], env: Map[String, S
   var files: String = null
   var archives: String = null
   var mainClass: String = null
-  var primaryResource: String = null
+  var primaryResource: String = null //primaryResource是指用户提交的app.jar
   var name: String = null
   var childArgs: ArrayBuffer[String] = new ArrayBuffer[String]()
   var jars: String = null
@@ -115,6 +115,7 @@ private[deploy] class SparkSubmitArguments(args: Seq[String], env: Map[String, S
   // Use `sparkProperties` map along with env vars to fill in any missing parameters
   loadEnvironmentArguments()
 
+  //TODO 对参数进行验证
   validateArguments()
 
   /**
@@ -147,6 +148,8 @@ private[deploy] class SparkSubmitArguments(args: Seq[String], env: Map[String, S
   /**
    * Load arguments from environment variables, Spark properties etc.
    */
+
+  //TODO 从系统环境变量和spark properties里load参数
   private def loadEnvironmentArguments(): Unit = {
     master = Option(master)
       .orElse(sparkProperties.get("spark.master"))
@@ -237,6 +240,9 @@ private[deploy] class SparkSubmitArguments(args: Seq[String], env: Map[String, S
     }
 
     // Action should be SUBMIT unless otherwise specified
+
+
+    //TODO 指定动作为SUBMIT
     action = Option(action).getOrElse(SUBMIT)
   }
 
@@ -353,6 +359,8 @@ private[deploy] class SparkSubmitArguments(args: Seq[String], env: Map[String, S
   }
 
   /** Fill in values by parsing user options. */
+
+  //TODO 在SparkSubmit里处理提交参数
   override protected def handle(opt: String, value: String): Boolean = {
     opt match {
       case NAME =>
@@ -443,6 +451,7 @@ private[deploy] class SparkSubmitArguments(args: Seq[String], env: Map[String, S
 
       case CONF =>
         val (confName, confValue) = SparkSubmitUtils.parseSparkConfProperty(value)
+        //TODO 将通过--conf [key]=[value]的配置项加入sparkProperties里
         sparkProperties(confName) = confValue
 
       case PROXY_USER =>
