@@ -238,6 +238,7 @@ private[spark] class ApplicationMaster(args: ApplicationMasterArguments) extends
 
   final def run(): Int = {
     doAsUser {
+      //TODO 运行ApplicationMaster
       runImpl()
     }
     exitCode
@@ -675,6 +676,7 @@ private[spark] class ApplicationMaster(args: ApplicationMasterArguments) extends
     val userThread = new Thread {
       override def run() {
         try {
+          //TODO 调用应用的主类
           mainMethod.invoke(null, userArgs.toArray)
           finish(FinalApplicationStatus.SUCCEEDED, ApplicationMaster.EXIT_SUCCESS)
           logDebug("Done running users class")

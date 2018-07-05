@@ -140,6 +140,7 @@ private[spark] class SparkSubmit extends Logging {
    */
   @tailrec
   private def submit(args: SparkSubmitArguments, uninitLog: Boolean): Unit = {
+    //TODO 根据不同的master和部署模式获取不同的提交环境
     val (childArgs, childClasspath, sparkConf, childMainClass) = prepareSubmitEnvironment(args)
 
     def doRunMain(): Unit = {
@@ -661,6 +662,7 @@ private[spark] class SparkSubmit extends Logging {
 
     // In yarn-cluster mode, use yarn.Client as a wrapper around the user class
     if (isYarnCluster) {
+      //TODO 如果是yarn模式，则采用org.apache.spark.deploy.yarn.YarnClusterApplication客户端
       childMainClass = YARN_CLUSTER_SUBMIT_CLASS
       if (args.isPython) {
         childArgs += ("--primary-py-file", args.primaryResource)

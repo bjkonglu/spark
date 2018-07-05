@@ -105,6 +105,7 @@ object OffsetSeqMetadata extends Logging {
         case Some(valueInMetadata) =>
           // Config value exists in the metadata, update the session config with this value
           val optionalValueInSession = sessionConf.getOption(confKey)
+          //FIXME 用户设置新的参数值，为啥不采用新的，而依然采用metadata里面设置的参数值？
           if (optionalValueInSession.isDefined && optionalValueInSession.get != valueInMetadata) {
             logWarning(s"Updating the value of conf '$confKey' in current session from " +
               s"'${optionalValueInSession.get}' to '$valueInMetadata'.")

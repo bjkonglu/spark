@@ -2736,6 +2736,7 @@ object SparkContext extends Logging {
         }
         (backend, scheduler)
 
+        //FIXME 额外的集群管理器，例如Mesos/YARN/Kubernetes
       case masterUrl =>
         val cm = getClusterManager(masterUrl) match {
           case Some(clusterMgr) => clusterMgr
@@ -2756,6 +2757,7 @@ object SparkContext extends Logging {
 
   private def getClusterManager(url: String): Option[ExternalClusterManager] = {
     val loader = Utils.getContextOrSparkClassLoader
+    //TODO 通过ServiceLoader加载额外的集群管理器，并判断额外的集群管理器与传入的masterUrl是否匹配
     val serviceLoaders =
       ServiceLoader.load(classOf[ExternalClusterManager], loader).asScala.filter(_.canCreate(url))
     if (serviceLoaders.size > 1) {

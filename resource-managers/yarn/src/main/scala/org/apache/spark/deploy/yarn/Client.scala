@@ -64,7 +64,7 @@ private[spark] class Client(
   import Client._
   import YarnSparkHadoopUtil._
 
-  private val yarnClient = YarnClient.createYarnClient
+  private val yarnClient = YarnClient.createYarnClient //YarnClientImpl
   private val hadoopConf = new YarnConfiguration(SparkHadoopUtil.newConfiguration(sparkConf))
 
   private val isClusterMode = sparkConf.get("spark.submit.deployMode", "client") == "cluster"
@@ -168,7 +168,9 @@ private[spark] class Client(
       verifyClusterResources(newAppResponse)
 
       // Set up the appropriate contexts to launch our AM
+      //TODO 为am container准备上下文
       val containerContext = createContainerLaunchContext(newAppResponse)
+      //TODO 使用am container为app准备上下文
       val appContext = createApplicationSubmissionContext(newApp, containerContext)
 
       // Finally, submit and monitor the application
@@ -851,6 +853,7 @@ private[spark] class Client(
       }
 
     val launchEnv = setupLaunchEnv(appStagingDirPath, pySparkArchives)
+    //TODO 为应用准备资源
     val localResources = prepareLocalResources(appStagingDirPath, pySparkArchives)
 
     val amContainer = Records.newRecord(classOf[ContainerLaunchContext])
@@ -1115,6 +1118,7 @@ private[spark] class Client(
    * throw an appropriate SparkException.
    */
   def run(): Unit = {
+    //TODO 提交应用给RM
     this.appId = submitApplication()
     if (!launcherBackend.isConnected() && fireAndForget) {
       val report = getApplicationReport(appId)
@@ -1477,6 +1481,7 @@ private object Client extends Logging {
 
 private[spark] class YarnClusterApplication extends SparkApplication {
 
+  //TODO yarn模式下的客户端，向yarn提交任务
   override def start(args: Array[String], conf: SparkConf): Unit = {
     // SparkSubmit would use yarn cache to distribute files & jars in yarn mode,
     // so remove them from sparkConf here for yarn mode.
