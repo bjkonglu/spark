@@ -98,10 +98,12 @@ class IncrementalExecution(
   /** Locates save/restore pairs surrounding aggregation. */
   val state = new Rule[SparkPlan] {
 
+    //FIXME ???
     override def apply(plan: SparkPlan): SparkPlan = plan transform {
       case StateStoreSaveExec(keys, None, None, None,
              UnaryExecNode(agg,
                StateStoreRestoreExec(_, None, child))) =>
+
         val aggStateInfo = nextStatefulOperationStateInfo
         StateStoreSaveExec(
           keys,
@@ -139,6 +141,7 @@ class IncrementalExecution(
     }
   }
 
+  //FIXME 增加两个新的物理计划执行点--StateStoreRestoreExec 和 StateStoreSaveExec
   override def preparations: Seq[Rule[SparkPlan]] = state +: super.preparations
 
   /** No need assert supported, as this check has already been done */

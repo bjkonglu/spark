@@ -225,7 +225,8 @@ abstract class SparkPlan extends QueryPlan[SparkPlan] with Logging with Serializ
    *
    * Overridden by concrete implementations of SparkPlan.
    */
-  //TODO 根据根节点的物理计划类型，采用相应的执行器，完成RDD之间的转换
+  //TODO 根据[根节点]的物理计划类型，采用相应的执行器，完成RDD之间的转换
+  //TODO 例如最后的操作是count(), 则最后的SparkPlan类型是AggregateInPandasExec
   protected def doExecute(): RDD[InternalRow]
 
   /**

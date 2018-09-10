@@ -76,6 +76,7 @@ case class AggregateInPandasExec(
     Seq(groupingExpressions.map(SortOrder(_, Ascending)))
 
   override protected def doExecute(): RDD[InternalRow] = {
+    //FIXME 向前递归每个SparkPlan
     val inputRDD = child.execute()
 
     val bufferSize = inputRDD.conf.getInt("spark.buffer.size", 65536)

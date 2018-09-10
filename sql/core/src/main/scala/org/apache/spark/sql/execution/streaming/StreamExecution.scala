@@ -265,7 +265,7 @@ abstract class StreamExecution(
       updateStatusMessage("Initializing sources")
       // force initialization of the logical plan so that the sources can be created
 
-      //FIXME 初始化数据源，并创建
+      //FIXME 初始化数据源，并复制逻辑计划的副本
       logicalPlan
 
       // Isolated spark session to run the batches with.

@@ -64,6 +64,7 @@ class QueryExecution(val sparkSession: SparkSession, val logical: LogicalPlan) {
     sparkSession.sharedState.cacheManager.useCachedData(analyzed)
   }
 
+  //FIXME 使用Catalyst优化器， 优化逻辑计划
   lazy val optimizedPlan: LogicalPlan = sparkSession.sessionState.optimizer.execute(withCachedData)
 
   lazy val sparkPlan: SparkPlan = {
@@ -71,12 +72,13 @@ class QueryExecution(val sparkSession: SparkSession, val logical: LogicalPlan) {
     // TODO: We use next(), i.e. take the first plan returned by the planner, here for now,
     //       but we will implement to choose the best plan.
 
-    //TODO 将替换了带有数据源的LogicalPlan转化成物理计划PhysicalPlan
+    //TODO 将替换了带有数据源的LogicalPlan先优化得到OptimizedPlan， 然后由OptimizedPlan生成PhysicalPlan[SparkPlan]
     planner.plan(ReturnAnswer(optimizedPlan)).next()
   }
 
   // executedPlan should not be used to initialize any SparkPlan. It should be
   // only used for execution.
+  //FIXME 将生成的物理计划检查，并增加状态存储两个物理执行节点， 并且可以通过toRDD得到RDD DAG
   lazy val executedPlan: SparkPlan = prepareForExecution(sparkPlan)
 
   /** Internal version of the RDD. Avoids copies and has no schema */
@@ -93,6 +95,8 @@ class QueryExecution(val sparkSession: SparkSession, val logical: LogicalPlan) {
   }
 
   /** A sequence of rules that will be applied in order to the physical plan before execution. */
+
+
   protected def preparations: Seq[Rule[SparkPlan]] = Seq(
     python.ExtractPythonUDFs,
     PlanSubqueries(sparkSession),

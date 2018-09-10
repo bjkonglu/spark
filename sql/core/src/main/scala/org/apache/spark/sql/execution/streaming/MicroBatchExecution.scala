@@ -61,7 +61,7 @@ class MicroBatchExecution(
     case _ => throw new IllegalStateException(s"Unknown type of trigger: $trigger")
   }
 
-  //TODO 在StreamExecution.runStream()被强制初试化
+  //TODO 在StreamExecution.runStream()被强制初试化， 将预先定义好的的逻辑(logicalPlan)制作出一个副本
   override lazy val logicalPlan: LogicalPlan = {
     assert(queryExecutionThread eq Thread.currentThread,
       "logicalPlan must be initialized in QueryExecutionThread " +
@@ -161,7 +161,7 @@ class MicroBatchExecution(
 
         //TODO 处理完batch数据后再提交commit信息
         if (dataAvailable) {
-          //TODO 提交 committed的batchId. 提交一个位点信息为{}的记录
+          //TODO 提交 committed的batchId. 提交一个位点信息为{}的记录， 通过hdfs-client写到hdfs中的目录里
           commitLog.add(currentBatchId)
           //TODO 更新committedOffsets值
           committedOffsets ++= availableOffsets
@@ -377,7 +377,7 @@ class MicroBatchExecution(
 
       updateStatusMessage("Writing offsets to log")
       reportTimeTaken("walCommit") {
-        //TODO 提交位点信息和watermark信息, 提交到hdfs:///checkpointPath/xx/offsets
+        //TODO 写WAL的方式 提交位点信息和watermark信息, 通过hdfs-clinet写入到hdfs:///checkpointPath/xx/offsets
         assert(offsetLog.add(
           currentBatchId,
           availableOffsets.toOffsetSeq(sources, offsetSeqMetadata)),
@@ -507,7 +507,7 @@ class MicroBatchExecution(
     }
 
     val triggerLogicalPlan = sink match {
-      case _: Sink => newAttributePlan
+      case _: Sink => newAttributePlan //采用新属性的计划
       case s: StreamWriteSupport =>
         val writer = s.createStreamWriter(
           s"$runId",
@@ -528,18 +528,21 @@ class MicroBatchExecution(
 
     reportTimeTaken("queryPlanning") {
       //TODO 用新的带有数据的LogicalPlan构建IncrementalExecution
+      //FIXME 增量查询
       lastExecution = new IncrementalExecution(
         sparkSessionToRunBatch,
         triggerLogicalPlan,
         outputMode,
-        checkpointFile("state"),
+        checkpointFile("state"),//保存state信息
         runId,
         currentBatchId,
         offsetSeqMetadata)
-      //TODO 生成物理执行计划
+
+      //TODO 增加状态存储物理计划节点，并生成SparkPlan， 并可以通过lastExecution.toRDD得到 RDD DAG
       lastExecution.executedPlan // Force the lazy generation of execution plan
     }
 
+    //FIXME lastExecution.analyzed开始遍历整个计划树
     val nextBatch =
       new Dataset(sparkSessionToRunBatch, lastExecution, RowEncoder(lastExecution.analyzed.schema))
 
