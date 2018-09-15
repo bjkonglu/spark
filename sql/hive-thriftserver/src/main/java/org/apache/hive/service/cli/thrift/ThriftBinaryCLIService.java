@@ -44,6 +44,10 @@ public class ThriftBinaryCLIService extends ThriftCLIService {
     super(cliService, ThriftBinaryCLIService.class.getSimpleName());
   }
 
+
+  /**
+   * 开启tpc通信服务，用户可以beeline客户端与SparkSQL thriftServer交互
+   * */
   @Override
   public void run() {
     try {

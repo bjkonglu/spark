@@ -65,6 +65,7 @@ public class CompositeService extends AbstractService {
   public synchronized void start() {
     int i = 0;
     try {
+      // 启动所有服务
       for (int n = serviceList.size(); i < n; i++) {
         Service service = serviceList.get(i);
         service.start();

@@ -175,6 +175,7 @@ public abstract class ThriftCLIService extends AbstractService implements TCLISe
   public synchronized void start() {
     super.start();
     if (!isStarted && !isEmbedded) {
+      // 开启与用户客户端交互的服务，例如http、tcp
       new Thread(this).start();
       isStarted = true;
     }

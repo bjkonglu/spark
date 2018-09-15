@@ -60,6 +60,9 @@ public class ThriftHttpCLIService extends ThriftCLIService {
    * e.g. http://gateway:port/hive2/servlets/thrifths2/
    */
   @Override
+  /**
+   * 开启http服务，接收http请求，处理http sql请求
+   * */
   public void run() {
     try {
       // Server thread pool

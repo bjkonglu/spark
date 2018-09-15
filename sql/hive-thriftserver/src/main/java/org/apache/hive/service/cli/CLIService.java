@@ -51,7 +51,7 @@ import org.apache.hive.service.server.HiveServer2;
 
 /**
  * CLIService.
- *
+ * 实现了thrift接口， 例如openSession、getInfo等接口
  */
 public class CLIService extends CompositeService implements ICLIService {
 
@@ -148,6 +148,7 @@ public class CLIService extends CompositeService implements ICLIService {
     // Initialize and test a connection to the metastore
     IMetaStoreClient metastoreClient = null;
     try {
+      // 连接hive的元数据库，并获取默认的数据库-default
       metastoreClient = new HiveMetaStoreClient(hiveConf);
       metastoreClient.getDatabases("default");
     } catch (Exception e) {
@@ -254,6 +255,11 @@ public class CLIService extends CompositeService implements ICLIService {
    * @see org.apache.hive.service.cli.ICLIService#executeStatement(org.apache.hive.service.cli.SessionHandle,
    *  java.lang.String, java.util.Map)
    */
+
+  /**
+   * 接口的具体实现，客户端远程调用接口(RPC),具体实现由服务器端实现
+   * */
+
   @Override
   public OperationHandle executeStatement(SessionHandle sessionHandle, String statement,
       Map<String, String> confOverlay)

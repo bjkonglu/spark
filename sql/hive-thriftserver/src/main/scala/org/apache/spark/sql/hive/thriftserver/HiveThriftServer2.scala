@@ -60,6 +60,7 @@ object HiveThriftServer2 extends Logging {
       sqlContext.sessionState.newHadoopConf())
 
     server.init(executionHive.conf)
+    // 启动thrift server服务
     server.start()
     listener = new HiveThriftServer2Listener(server, sqlContext.conf)
     sqlContext.sparkContext.addSparkListener(listener)
@@ -78,11 +79,13 @@ object HiveThriftServer2 extends Logging {
     logInfo("Starting SparkContext")
     SparkSQLEnv.init()
 
+    // 初始化花SQLContext和SparkContext
     ShutdownHookManager.addShutdownHook { () =>
       SparkSQLEnv.stop()
       uiTab.foreach(_.detach())
     }
 
+    // 获取HiveClient对象
     val executionHive = HiveUtils.newClientForExecution(
       SparkSQLEnv.sqlContext.sparkContext.conf,
       SparkSQLEnv.sqlContext.sessionState.newHadoopConf())
@@ -275,10 +278,12 @@ private[hive] class HiveThriftServer2(sqlContext: SQLContext)
   private val started = new AtomicBoolean(false)
 
   override def init(hiveConf: HiveConf) {
+    // 调用后端的hive/spark完成计算，并把结果给thriftCliService
     val sparkSqlCliService = new SparkSQLCLIService(this, sqlContext)
     setSuperField(this, "cliService", sparkSqlCliService)
     addService(sparkSqlCliService)
 
+    // 作为服务端, 维护与客户端的连接，并将客户端的请求转发给SparkSQLCLIService
     val thriftCliService = if (isHTTPTransportMode(hiveConf)) {
       new ThriftHttpCLIService(sparkSqlCliService)
     } else {
@@ -287,6 +292,8 @@ private[hive] class HiveThriftServer2(sqlContext: SQLContext)
 
     setSuperField(this, "thriftCLIService", thriftCliService)
     addService(thriftCliService)
+
+    // 初始化两个服务
     initCompositeService(hiveConf)
   }
 
