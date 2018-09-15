@@ -463,10 +463,12 @@ public class HiveSessionImpl implements HiveSession {
     acquire(true);
 
     OperationManager operationManager = getOperationManager();
+    // operationManager的类型是SparkSQLOperationManager
     ExecuteStatementOperation operation = operationManager
         .newExecuteStatementOperation(getSession(), statement, confOverlay, runAsync);
     OperationHandle opHandle = operation.getHandle();
     try {
+      // 执行spark-sql语句
       operation.run();
       opHandleSet.add(opHandle);
       return opHandle;

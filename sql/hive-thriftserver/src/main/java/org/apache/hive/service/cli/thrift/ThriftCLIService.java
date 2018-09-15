@@ -209,6 +209,11 @@ public abstract class ThriftCLIService extends AbstractService implements TCLISe
     return serverIPAddress;
   }
 
+
+  /*
+  * 下面部分是对接口TCLIService.Iface的具体实现
+  * */
+
   @Override
   public TGetDelegationTokenResp GetDelegationToken(TGetDelegationTokenReq req)
       throws TException {
@@ -425,6 +430,7 @@ public abstract class ThriftCLIService extends AbstractService implements TCLISe
     return resp;
   }
 
+  // 执行sql语句, 这是TCLIService.Iface接口的实现， 而具体处理逻辑又转交给CLIService实现
   @Override
   public TExecuteStatementResp ExecuteStatement(TExecuteStatementReq req) throws TException {
     TExecuteStatementResp resp = new TExecuteStatementResp();

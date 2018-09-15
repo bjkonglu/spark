@@ -124,6 +124,7 @@ public class ThriftHttpCLIService extends ThriftCLIService {
 
       // Thrift configs
       hiveAuthFactory = new HiveAuthFactory(hiveConf);
+      // 将接口的具体实现ThriftCLIService传入Processor
       TProcessor processor = new TCLIService.Processor<Iface>(this);
       TProtocolFactory protocolFactory = new TBinaryProtocol.Factory();
       // Set during the init phase of HiveServer2 if auth mode is kerberos

@@ -209,6 +209,10 @@ private[hive] class SparkExecuteStatementOperation(
     }
   }
 
+  /**
+    * 执行spark-sql语句
+    * */
+
   private def execute(): Unit = {
     statementId = UUID.randomUUID().toString
     logInfo(s"Running query '$statement' with $statementId")
@@ -229,7 +233,8 @@ private[hive] class SparkExecuteStatementOperation(
       sqlContext.sparkContext.setLocalProperty("spark.scheduler.pool", pool)
     }
     try {
-      result = sqlContext.sql(statement).asInstanceOf[DataFrame]
+      // 执行sql statement
+      result = sqlContext.sql(statement)
       logDebug(result.queryExecution.toString())
       result.queryExecution.logical match {
         case SetCommand(Some((SQLConf.THRIFTSERVER_POOL.key, Some(value)))) =>

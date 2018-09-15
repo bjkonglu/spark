@@ -256,10 +256,6 @@ public class CLIService extends CompositeService implements ICLIService {
    *  java.lang.String, java.util.Map)
    */
 
-  /**
-   * 接口的具体实现，客户端远程调用接口(RPC),具体实现由服务器端实现
-   * */
-
   @Override
   public OperationHandle executeStatement(SessionHandle sessionHandle, String statement,
       Map<String, String> confOverlay)
