@@ -100,6 +100,7 @@ private[spark] class ApplicationMaster(args: ApplicationMasterArguments) extends
   }
 
   private val credentialRenewer: Option[AMCredentialRenewer] = sparkConf.get(KEYTAB).map { _ =>
+    // FIXME 票据更新类
     new AMCredentialRenewer(sparkConf, yarnConf)
   }
 
@@ -302,6 +303,7 @@ private[spark] class ApplicationMaster(args: ApplicationMasterArguments) extends
       }
 
       if (isClusterMode) {
+        // FIXME 在集群模式下运行Driver
         runDriver()
       } else {
         runExecutorLauncher()
@@ -416,6 +418,10 @@ private[spark] class ApplicationMaster(args: ApplicationMasterArguments) extends
     registered = true
   }
 
+  /**
+    * 创建资源分配器
+    * */
+
   private def createAllocator(driverRef: RpcEndpointRef, _sparkConf: SparkConf): Unit = {
     val appId = client.getAttemptId().getApplicationId().toString()
     val driverUrl = RpcEndpointAddress(driverRef.address.host, driverRef.address.port,
@@ -440,6 +446,7 @@ private[spark] class ApplicationMaster(args: ApplicationMasterArguments) extends
       securityMgr,
       localResources)
 
+    // FIXME 使用配置的keytab文件和principal去认证
     credentialRenewer.foreach(_.setDriverRef(driverRef))
 
     // Initialize the AM endpoint *after* the allocator has been initialized. This ensures
@@ -458,6 +465,7 @@ private[spark] class ApplicationMaster(args: ApplicationMasterArguments) extends
 
   private def runDriver(): Unit = {
     addAmIpFilter(None)
+    // FIXME 以单独线程运行用户的代码，即用户代码的Driver
     userClassThread = startUserApplication()
 
     // This a bit hacky, but we need to wait until the spark.driver.port property has
@@ -478,6 +486,7 @@ private[spark] class ApplicationMaster(args: ApplicationMasterArguments) extends
         val driverRef = rpcEnv.setupEndpointRef(
           RpcAddress(host, port),
           YarnSchedulerBackend.ENDPOINT_NAME)
+        // FIXME 给executors分配容器
         createAllocator(driverRef, userConf)
       } else {
         // Sanity check; should never happen in normal operation, since sc should only be null

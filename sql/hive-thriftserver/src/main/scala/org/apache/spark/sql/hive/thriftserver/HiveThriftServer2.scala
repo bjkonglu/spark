@@ -93,6 +93,7 @@ object HiveThriftServer2 extends Logging {
     try {
       val server = new HiveThriftServer2(SparkSQLEnv.sqlContext)
       server.init(executionHive.conf)
+      //FIXME 启动SparkSQLCLIService时，会先启动其父类CLIService，而它会创建hive metaStoreClient去获取hive元数据
       server.start()
       logInfo("HiveThriftServer2 started")
       listener = new HiveThriftServer2Listener(server, SparkSQLEnv.sqlContext.conf)

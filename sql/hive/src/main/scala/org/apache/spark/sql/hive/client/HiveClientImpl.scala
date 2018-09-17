@@ -157,6 +157,8 @@ private[hive] class HiveClientImpl(
     // this action explicit.
     hiveConf.setClassLoader(initClassLoader)
 
+    //FIXME 初始化hiveConf
+
     // 1: Take all from the hadoopConf to this hiveConf.
     // This hadoopConf contains user settings in Hadoop's core-site.xml file
     // and Hive's hive-site.xml file. Note, we load hive-site.xml file manually in

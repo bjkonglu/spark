@@ -180,6 +180,7 @@ private[spark] class Client(
 
       // Finally, submit and monitor the application
       logInfo(s"Submitting application $appId to ResourceManager")
+      // FIXME 将应用提交给yarn rm, amClass->ApplicationMaster
       yarnClient.submitApplication(appContext)
       launcherBackend.setAppId(appId.toString)
       reportLauncherState(SparkAppHandle.State.SUBMITTED)
@@ -963,6 +964,7 @@ private[spark] class Client(
       } else {
         Nil
       }
+    //FIXME amClass是org.apache.spark.deploy.yarn.ApplicationMaster
     val amClass =
       if (isClusterMode) {
         Utils.classForName("org.apache.spark.deploy.yarn.ApplicationMaster").getName
@@ -1131,6 +1133,7 @@ private[spark] class Client(
    * throw an appropriate SparkException.
    */
   def run(): Unit = {
+    // 提交spark应用
     this.appId = submitApplication()
     if (!launcherBackend.isConnected() && fireAndForget) {
       val report = getApplicationReport(appId)
@@ -1515,6 +1518,10 @@ private object Client extends Logging {
   }
 }
 
+
+/**
+  * 以yarn-client形式，与yarn进行交互，提交spark app
+  * */
 private[spark] class YarnClusterApplication extends SparkApplication {
 
   override def start(args: Array[String], conf: SparkConf): Unit = {

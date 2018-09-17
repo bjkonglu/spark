@@ -501,6 +501,7 @@ private[yarn] class YarnAllocator(
           launcherPool.execute(new Runnable {
             override def run(): Unit = {
               try {
+                // FIXME 启动容器
                 new ExecutorRunnable(
                   Some(container),
                   conf,

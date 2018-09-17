@@ -896,6 +896,7 @@ object SparkSubmit extends CommandLineUtils with Logging {
   private val CLASS_NOT_FOUND_EXIT_STATUS = 101
 
   // Following constants are visible for testing.
+  // FIXME yarn方式提交任务的集群客户端
   private[deploy] val YARN_CLUSTER_SUBMIT_CLASS =
     "org.apache.spark.deploy.yarn.YarnClusterApplication"
   private[deploy] val REST_CLUSTER_SUBMIT_CLASS = classOf[RestSubmissionClientApp].getName()

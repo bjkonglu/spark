@@ -95,6 +95,7 @@ private[yarn] class ExecutorRunnable(
     credentials.writeTokenStorageToStream(dob)
     ctx.setTokens(ByteBuffer.wrap(dob.getData()))
 
+    // FIXME 准备启动executor的命令行 -> CoarseGrainedExecutorBackend
     val commands = prepareCommand()
 
     ctx.setCommands(commands.asJava)
