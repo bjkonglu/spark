@@ -88,10 +88,12 @@ private[yarn] class AMCredentialRenewer(
 
     val tgtRenewalTask = new Runnable() {
       override def run(): Unit = {
+        //FIXME 超过80%的有效期，开始使用keytab重新登入
         ugi.checkTGTAndReloginFromKeytab()
       }
     }
     val tgtRenewalPeriod = sparkConf.get(KERBEROS_RELOGIN_PERIOD)
+    //FIXME 定期调度线程执行票据更新任务
     renewalExecutor.scheduleAtFixedRate(tgtRenewalTask, tgtRenewalPeriod, tgtRenewalPeriod,
       TimeUnit.SECONDS)
 
@@ -159,6 +161,7 @@ private[yarn] class AMCredentialRenewer(
         val creds = new Credentials()
         val nextRenewal = credentialManager.obtainDelegationTokens(hadoopConf, creds)
 
+        //FIXME 75%的票期过期时间，开始向executors同步票据
         val timeToWait = SparkHadoopUtil.nextCredentialRenewalTime(nextRenewal, sparkConf) -
           System.currentTimeMillis()
         scheduleRenewal(timeToWait)

@@ -111,6 +111,7 @@ private[spark] class ApplicationMaster(args: ApplicationMasterArguments) extends
       val currentLoader = Thread.currentThread().getContextClassLoader()
       Thread.currentThread().setContextClassLoader(userClassLoader)
       try {
+        //FIXME 触发AM认证更新机制
         cr.start()
       } finally {
         Thread.currentThread().setContextClassLoader(currentLoader)
@@ -446,7 +447,7 @@ private[spark] class ApplicationMaster(args: ApplicationMasterArguments) extends
       securityMgr,
       localResources)
 
-    // FIXME 使用配置的keytab文件和principal去认证
+    //FIXME 使用配置的keytab文件和principal去认证
     credentialRenewer.foreach(_.setDriverRef(driverRef))
 
     // Initialize the AM endpoint *after* the allocator has been initialized. This ensures
@@ -799,6 +800,10 @@ object ApplicationMaster extends Logging {
 
   private var master: ApplicationMaster = _
 
+
+  /**
+    * spark app yarn-cluster模式运行时，driver运行在ApplicationMaster中。
+    * */
   def main(args: Array[String]): Unit = {
     SignalUtils.registerLogger(log)
     val amArgs = new ApplicationMasterArguments(args)
