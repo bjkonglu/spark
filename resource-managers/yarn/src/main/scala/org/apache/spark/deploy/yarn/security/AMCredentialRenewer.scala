@@ -67,9 +67,11 @@ private[yarn] class AMCredentialRenewer(
   private val credentialsFile = sparkConf.get(CREDENTIALS_FILE_PATH)
   private val daysToKeepFiles = sparkConf.get(CREDENTIALS_FILE_MAX_RETENTION)
   private val numFilesToKeep = sparkConf.get(CREDENTIAL_FILE_MAX_COUNT)
+  // FIXME 获取最新的hadoopConf，强制设置spark.hadoop.fs.hdfs..impl.disable.cache -> true
   private val freshHadoopConf =
     hadoopUtil.getConfBypassingFSCache(hadoopConf, new Path(credentialsFile).toUri.getScheme)
 
+  // spark.yarn.credentials.renewalTime在AM container启动时，被配置为dfs.namenode.delegation.token.renew-interval的75%，(24h*0.75 + curTs)
   @volatile private var timeOfNextRenewal: Long = sparkConf.get(CREDENTIALS_RENEWAL_TIME)
 
   /**
@@ -95,6 +97,7 @@ private[yarn] class AMCredentialRenewer(
         runnable.run()
       } else {
         logInfo(s"Scheduling login from keytab in $remainingTime millis.")
+        // FIXME 开启"Credential Refresh Thread"在证书更新时间间隔的75%时，执行证书更新动作
         credentialRenewerThread.schedule(runnable, remainingTime, TimeUnit.MILLISECONDS)
       }
     }
@@ -104,6 +107,7 @@ private[yarn] class AMCredentialRenewer(
       new Runnable {
         override def run(): Unit = {
           try {
+            // FIXME 将获取的证书写入hdfs目录下
             writeNewCredentialsToHDFS(principal, keytab)
             cleanupOldFiles()
           } catch {
@@ -114,6 +118,7 @@ private[yarn] class AMCredentialRenewer(
               credentialRenewerThread.schedule(this, 1, TimeUnit.HOURS)
               return
           }
+          // FIXME 递归调用scheduleRenewal
           scheduleRenewal(this)
         }
       }
@@ -174,6 +179,7 @@ private[yarn] class AMCredentialRenewer(
     keytabLoggedInUGI.doAs(new PrivilegedExceptionAction[Void] {
       // Get a copy of the credentials
       override def run(): Void = {
+        // FIXME 获取XX_DELEGATION_TOKEN, 并返回下次更新证书的时间
         nearestNextRenewalTime = credentialManager.obtainDelegationTokens(
           freshHadoopConf,
           tempCreds)
@@ -224,6 +230,7 @@ private[yarn] class AMCredentialRenewer(
     val tempTokenPath = new Path(tokenPathStr + SparkHadoopUtil.SPARK_YARN_CREDS_TEMP_EXTENSION)
 
     logInfo("Writing out delegation tokens to " + tempTokenPath.toString)
+    // FIXME 将认证信息写入路径->hdfs://media-cluster2/user/streams/.sparkStaging/application_xxx_xxx/credentials-xx-xxx/
     val credentials = UserGroupInformation.getCurrentUser.getCredentials
     credentials.writeTokenStorageFile(tempTokenPath, freshHadoopConf)
     logInfo(s"Delegation Tokens written out successfully. Renaming file to $tokenPathStr")

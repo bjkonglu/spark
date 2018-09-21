@@ -57,6 +57,7 @@ private[yarn] class YARNHadoopDelegationTokenManager(
 
     credentialProviders.values.flatMap { provider =>
       if (provider.credentialsRequired(hadoopConf)) {
+        // FIXME provider实例HadoopFSDelegationTokenProvider
         provider.obtainCredentials(hadoopConf, sparkConf, creds)
       } else {
         logDebug(s"Service ${provider.serviceName} does not require a token." +

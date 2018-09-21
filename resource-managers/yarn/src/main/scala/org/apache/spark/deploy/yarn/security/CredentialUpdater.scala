@@ -65,6 +65,10 @@ private[spark] class CredentialUpdater(
     }
   }
 
+  /**
+    * 从HDFS上获取证书的token信息
+    *
+    * */
   private def updateCredentialsIfRequired(): Unit = {
     val timeToNextUpdate = try {
       val credentialsFilePath = new Path(credentialsFile)

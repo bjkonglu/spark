@@ -166,6 +166,7 @@ private[spark] class Client(
       verifyClusterResources(newAppResponse)
 
       // Set up the appropriate contexts to launch our AM
+      // FIXME 为启动AM准备环境
       val containerContext = createContainerLaunchContext(newAppResponse)
       val appContext = createApplicationSubmissionContext(newApp, containerContext)
 
@@ -410,6 +411,7 @@ private[spark] class Client(
       val renewalTime = (nearestTimeOfNextRenewal - currTime) * 0.75 + currTime
       val updateTime = (nearestTimeOfNextRenewal - currTime) * 0.8 + currTime
 
+      // FIXME 设置spark.yarn.credentials.renewalTime，spark.yarn.credentials.updateTime两个参数的值
       sparkConf.set(CREDENTIALS_RENEWAL_TIME, renewalTime.toLong)
       sparkConf.set(CREDENTIALS_UPDATE_TIME, updateTime.toLong)
     }
@@ -865,7 +867,9 @@ private[spark] class Client(
         Nil
       }
 
+    //FIXME 设置工作目录， 包括应用使用的依赖、配置文件以及认证文件等
     val launchEnv = setupLaunchEnv(appStagingDirPath, pySparkArchives)
+    //FIXME 准备本地资源，例如设置spark.yarn.credentials.renewalTime的值
     val localResources = prepareLocalResources(appStagingDirPath, pySparkArchives)
 
     val amContainer = Records.newRecord(classOf[ContainerLaunchContext])
@@ -988,6 +992,8 @@ private[spark] class Client(
         "2>", ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/stderr")
 
     // TODO: it would be nicer to just make sure there are no null commands here
+
+    //FIXME 启动ApplicationMaster的命令
     val printableCommands = commands.map(s => if (s == null) "null" else s).toList
     amContainer.setCommands(printableCommands.asJava)
 
@@ -1149,6 +1155,7 @@ private[spark] class Client(
    * throw an appropriate SparkException.
    */
   def run(): Unit = {
+    // FIXME 向YARN提交应用
     this.appId = submitApplication()
     if (!launcherBackend.isConnected() && fireAndForget) {
       val report = getApplicationReport(appId)

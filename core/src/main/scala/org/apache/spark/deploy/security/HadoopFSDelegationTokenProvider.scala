@@ -46,6 +46,7 @@ private[deploy] class HadoopFSDelegationTokenProvider(fileSystems: Configuration
       creds: Credentials): Option[Long] = {
 
     val fsToGetTokens = fileSystems(hadoopConf)
+    // FIXME 获取HDFS证书
     val fetchCreds = fetchDelegationTokens(getTokenRenewer(hadoopConf), fsToGetTokens, creds)
 
     // Get the token renewal interval if it is not set. It will only be called once.

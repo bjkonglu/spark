@@ -88,9 +88,13 @@ private[spark] class ApplicationMaster(args: ApplicationMasterArguments) extends
     // checkTGTAndReloginFromKeytab() is a no-op if the relogin is not yet needed.
     val principal = sparkConf.get(PRINCIPAL).orNull
     val keytab = sparkConf.get(KEYTAB).orNull
+
     if (principal != null && keytab != null) {
+
+      //FIXME 使用principal和keytab文件登入kerberos
       UserGroupInformation.loginUserFromKeytab(principal, keytab)
 
+      //FIXME 启动am-kerberos-renewer线程定时重新登入kerberos
       val renewer = new Thread() {
         override def run(): Unit = Utils.tryLogNonFatalError {
           while (true) {
@@ -333,6 +337,7 @@ private[spark] class ApplicationMaster(args: ApplicationMasterArguments) extends
 
             val credentialRenewer =
               new AMCredentialRenewer(sparkConf, yarnConf, credentialManager)
+            // FIXME 启动定期线程更新证书，并将新的证书写入HDFS
             credentialRenewer.scheduleLoginFromKeytab()
           }
         }
@@ -473,6 +478,7 @@ private[spark] class ApplicationMaster(args: ApplicationMasterArguments) extends
     // the allocator is ready to service requests.
     rpcEnv.setupEndpoint("YarnAM", new AMEndpoint(rpcEnv, driverRef))
 
+    // FIXME 分配容器启动Executors
     allocator.allocateResources()
     reporterThread = launchReporterThread()
   }
@@ -488,6 +494,7 @@ private[spark] class ApplicationMaster(args: ApplicationMasterArguments) extends
 
   private def runDriver(): Unit = {
     addAmIpFilter(None)
+    // FIXME 启动用户代码，Driver
     userClassThread = startUserApplication()
 
     // This a bit hacky, but we need to wait until the spark.driver.port property has
@@ -502,6 +509,7 @@ private[spark] class ApplicationMaster(args: ApplicationMasterArguments) extends
         val driverRef = createSchedulerRef(
           sc.getConf.get("spark.driver.host"),
           sc.getConf.get("spark.driver.port"))
+        // FIXME 注册AM, 并申请容器启动Executors
         registerAM(sc.getConf, rpcEnv, driverRef, sc.ui.map(_.webUrl))
         registered = true
       } else {

@@ -216,6 +216,7 @@ private[spark] object CoarseGrainedExecutorBackend extends Logging {
       if (driverConf.contains("spark.yarn.credentials.file")) {
         logInfo("Will periodically update credentials from: " +
           driverConf.get("spark.yarn.credentials.file"))
+        //FIXME 在Executor上执行获取HDFS上token的动作
         Utils.classForName("org.apache.spark.deploy.yarn.YarnSparkHadoopUtil")
           .getMethod("startCredentialUpdater", classOf[SparkConf])
           .invoke(null, driverConf)
