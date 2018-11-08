@@ -86,6 +86,7 @@
     <module>common/kvstore</module>
     <module>common/network-common</module>
     <module>common/network-shuffle</module>
+    <module>common/network-yarn</module>
     <module>common/unsafe</module>
     <module>common/tags</module>
     <module>core</module>
@@ -231,7 +232,13 @@
 
     <CodeCacheSize>512m</CodeCacheSize>
   </properties>
+
+  <!--common repositories-->
   <repositories>
+    <repository>
+      <id>alimaven</id>
+      <url>http://maven.aliyun.com/nexus/content/groups/public/</url>
+    </repository>
     <repository>
       <id>central</id>
       <!-- This should be at top, it makes maven try the central repo first and then others and hence faster dep resolution -->
@@ -245,7 +252,18 @@
       </snapshots>
     </repository>
   </repositories>
+  <!--common pluginRepositories-->
   <pluginRepositories>
+    <pluginRepository>
+      <id>central</id>
+      <url>http://maven.aliyun.com/nexus/content/groups/public/</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </pluginRepository>
     <pluginRepository>
       <id>central</id>
       <url>https://repo.maven.apache.org/maven2</url>
