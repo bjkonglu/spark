@@ -255,7 +255,7 @@
   <!--common pluginRepositories-->
   <pluginRepositories>
     <pluginRepository>
-      <id>central</id>
+      <id>alimaven</id>
       <url>http://maven.aliyun.com/nexus/content/groups/public/</url>
       <releases>
         <enabled>true</enabled>
