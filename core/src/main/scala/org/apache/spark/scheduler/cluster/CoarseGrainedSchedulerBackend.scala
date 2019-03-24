@@ -154,7 +154,7 @@ class CoarseGrainedSchedulerBackend(scheduler: TaskSchedulerImpl, val rpcEnv: Rp
                 s"from unknown executor with ID $executorId")
           }
         }
-
+      //TODO 接收消息并开始处理
       case ReviveOffers =>
         makeOffers()
 
@@ -266,8 +266,10 @@ class CoarseGrainedSchedulerBackend(scheduler: TaskSchedulerImpl, val rpcEnv: Rp
             new WorkerOffer(id, executorData.executorHost, executorData.freeCores,
               Some(executorData.executorAddress.hostPort))
         }.toIndexedSeq
+        //TODO 获取tasks，并给tasks分配executors
         scheduler.resourceOffers(workOffers)
       }
+      //TODO 启动任务tasks
       if (!taskDescs.isEmpty) {
         launchTasks(taskDescs)
       }
@@ -308,6 +310,7 @@ class CoarseGrainedSchedulerBackend(scheduler: TaskSchedulerImpl, val rpcEnv: Rp
 
     // Launch tasks returned by a set of resource offers
     private def launchTasks(tasks: Seq[Seq[TaskDescription]]) {
+      //TODO 循环处理每个Task
       for (task <- tasks.flatten) {
         val serializedTask = TaskDescription.encode(task)
         if (serializedTask.limit() >= maxRpcMessageSize) {
@@ -329,7 +332,8 @@ class CoarseGrainedSchedulerBackend(scheduler: TaskSchedulerImpl, val rpcEnv: Rp
 
           logDebug(s"Launching task ${task.taskId} on executor id: ${task.executorId} hostname: " +
             s"${executorData.executorHost}.")
-
+          //TODO executorData:每个executor节点的抽象,通过executorData通过rpc将任务tasks发送到实际执行节点executor
+          //序列化两次
           executorData.executorEndpoint.send(LaunchTask(new SerializableBuffer(serializedTask)))
         }
       }
@@ -470,6 +474,7 @@ class CoarseGrainedSchedulerBackend(scheduler: TaskSchedulerImpl, val rpcEnv: Rp
   }
 
   override def reviveOffers() {
+    //TODO driverEndpoint: RpcEndpointRef发送通信消息，消息将会被RpcEndpoint角色:DriverEndpoint接收并处理
     driverEndpoint.send(ReviveOffers)
   }
 

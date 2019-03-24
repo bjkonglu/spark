@@ -95,5 +95,5 @@ spark-warehouse/
 
 .Rproj.user
 
-# For SBT
-.jvmopts
+.github/
+

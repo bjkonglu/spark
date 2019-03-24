@@ -142,7 +142,7 @@ class CoGroupedRDD[K: ClassTag](
         rddIterators += ((it, depNum))
 
       case shuffleDependency: ShuffleDependency[_, _, _] =>
-        // Read map outputs of shuffle
+        //TODO Read map outputs of shuffle
         val metrics = context.taskMetrics().createTempShuffleReadMetrics()
         val it = SparkEnv.get.shuffleManager
           .getReader(

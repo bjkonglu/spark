@@ -22,9 +22,7 @@ import java.util.concurrent.TimeUnit
 import javax.annotation.concurrent.GuardedBy
 
 import scala.collection.mutable
-
 import org.apache.hadoop.fs.Path
-
 import org.apache.spark.SparkException
 import org.apache.spark.annotation.Evolving
 import org.apache.spark.internal.Logging
@@ -321,6 +319,7 @@ class StreamingQueryManager private[sql] (sparkSession: SparkSession) extends Lo
       recoverFromCheckpointLocation: Boolean = true,
       trigger: Trigger = Trigger.ProcessingTime(0),
       triggerClock: Clock = new SystemClock()): StreamingQuery = {
+
     val query = createQuery(
       userSpecifiedName,
       userSpecifiedCheckpointLocation,
@@ -357,6 +356,8 @@ class StreamingQueryManager private[sql] (sparkSession: SparkSession) extends Lo
       // As it's provided by the user and can run arbitrary codes, we must not hold any lock here.
       // Otherwise, it's easy to cause dead-lock, or block too long if the user codes take a long
       // time to finish.
+
+      //TODO 触发查询引擎StreamExecution
       query.streamingQuery.start()
     } catch {
       case e: Throwable =>

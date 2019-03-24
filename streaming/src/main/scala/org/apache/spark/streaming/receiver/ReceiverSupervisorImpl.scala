@@ -54,6 +54,7 @@ private[streaming] class ReceiverSupervisorImpl(
 
   private val receivedBlockHandler: ReceivedBlockHandler = {
     if (WriteAheadLogUtils.enableReceiverLog(env.conf)) {
+      //TODO 开启WAL模式，存储数据前将数据以日志形式写入checkpoint.
       if (checkpointDirOption.isEmpty) {
         throw new SparkException(
           "Cannot enable receiver write-ahead log without checkpoint directory set. " +
@@ -63,6 +64,7 @@ private[streaming] class ReceiverSupervisorImpl(
       new WriteAheadLogBasedBlockHandler(env.blockManager, env.serializerManager, receiver.streamId,
         receiver.storageLevel, env.conf, hadoopConf, checkpointDirOption.get)
     } else {
+      //TODO 直接存储数据
       new BlockManagerBasedBlockHandler(env.blockManager, receiver.storageLevel)
     }
   }
@@ -107,7 +109,8 @@ private[streaming] class ReceiverSupervisorImpl(
     }
 
     def onPushBlock(blockId: StreamBlockId, arrayBuffer: ArrayBuffer[_]) {
-      pushArrayBuffer(arrayBuffer, None, Some(blockId))
+      pushArrayBuffer(arrayBuffer, None, Some(blockId))//TODO 生成的数据块从队列中拿出后，触发事件。
+      // 将块数据以pushArrayBuffer的形式存储
     }
   }
   private val defaultBlockGenerator = createBlockGenerator(defaultBlockGeneratorListener)
@@ -155,6 +158,7 @@ private[streaming] class ReceiverSupervisorImpl(
     ) {
     val blockId = blockIdOption.getOrElse(nextBlockId)
     val time = System.currentTimeMillis
+    //TODO 数据存储
     val blockStoreResult = receivedBlockHandler.storeBlock(blockId, receivedBlock)
     logDebug(s"Pushed block $blockId in ${(System.currentTimeMillis - time)} ms")
     val numRecords = blockStoreResult.numRecords
@@ -206,6 +210,7 @@ private[streaming] class ReceiverSupervisorImpl(
     val stoppedGenerators = registeredBlockGenerators.asScala.filter{ _.isStopped() }
     stoppedGenerators.foreach(registeredBlockGenerators.remove(_))
 
+    /*TODO 通过defaultBlockGeneratorListener创建BlockGenerator*/
     val newBlockGenerator = new BlockGenerator(blockGeneratorListener, streamId, env.conf)
     registeredBlockGenerators.add(newBlockGenerator)
     newBlockGenerator

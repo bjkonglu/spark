@@ -53,6 +53,7 @@ private[netty] class NettyRpcEnv(
     "rpc",
     conf.get(RPC_IO_THREADS).getOrElse(numUsableCores))
 
+  //TODO RPC调度器
   private val dispatcher: Dispatcher = new Dispatcher(this, numUsableCores)
 
   private val streamManager = new NettyStreamManager(this)

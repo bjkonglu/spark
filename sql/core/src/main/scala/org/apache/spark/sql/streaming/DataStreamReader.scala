@@ -20,7 +20,6 @@ package org.apache.spark.sql.streaming
 import java.util.Locale
 
 import scala.collection.JavaConverters._
-
 import org.apache.spark.annotation.Evolving
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.{AnalysisException, DataFrame, Dataset, SparkSession}

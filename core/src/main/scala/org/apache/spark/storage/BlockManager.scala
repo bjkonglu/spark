@@ -1211,6 +1211,7 @@ private[spark] class BlockManager(
    * @return None if the block was already present or if the put succeeded, or Some(iterator)
    *         if the put failed.
    */
+  //TODO 根据用户选定的存储等级存储数据
   private def doPutIterator[T](
       blockId: BlockId,
       iterator: () => Iterator[T],

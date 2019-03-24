@@ -202,6 +202,7 @@ private[netty] class Dispatcher(nettyEnv: NettyRpcEnv, numUsableCores: Int) exte
       .getOrElse(math.max(2, availableCores))
     val pool = ThreadUtils.newDaemonFixedThreadPool(numThreads, "dispatcher-event-loop")
     for (i <- 0 until numThreads) {
+      //TODO 处理RPC消息
       pool.execute(new MessageLoop)
     }
     pool
@@ -219,6 +220,7 @@ private[netty] class Dispatcher(nettyEnv: NettyRpcEnv, numUsableCores: Int) exte
               receivers.offer(PoisonPill)
               return
             }
+            //TODO 处理消息
             data.inbox.process(Dispatcher.this)
           } catch {
             case NonFatal(e) => logError(e.getMessage, e)

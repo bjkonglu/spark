@@ -85,6 +85,7 @@ private[spark] class ShuffleMapTask(
       threadMXBean.getCurrentThreadCpuTime
     } else 0L
     val ser = SparkEnv.get.closureSerializer.newInstance()
+    //TODO 获取rdd和依赖dep
     val (rdd, dep) = ser.deserialize[(RDD[_], ShuffleDependency[_, _, _])](
       ByteBuffer.wrap(taskBinary.value), Thread.currentThread.getContextClassLoader)
     _executorDeserializeTimeNs = System.nanoTime() - deserializeStartTimeNs
@@ -92,7 +93,9 @@ private[spark] class ShuffleMapTask(
       threadMXBean.getCurrentThreadCpuTime - deserializeStartCpuTime
     } else 0L
 
+    //TODO 将shuffle后的值写出(out)
     dep.shuffleWriterProcessor.write(rdd, dep, partitionId, context, partition)
+
   }
 
   override def preferredLocations: Seq[TaskLocation] = preferredLocs

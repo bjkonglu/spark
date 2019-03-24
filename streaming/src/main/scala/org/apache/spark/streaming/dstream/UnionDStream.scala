@@ -39,12 +39,14 @@ class UnionDStream[T: ClassTag](parents: Array[DStream[T]])
 
   override def compute(validTime: Time): Option[RDD[T]] = {
     val rdds = new ArrayBuffer[RDD[T]]()
+    //处理union操作：多个输入一个输出
     parents.map(_.getOrCompute(validTime)).foreach {
       case Some(rdd) => rdds += rdd
       case None => throw new SparkException("Could not generate RDD from a parent for unifying at" +
         s" time $validTime")
     }
     if (rdds.nonEmpty) {
+      //调用Spark Core union操作聚合多个rdds
       Some(ssc.sc.union(rdds))
     } else {
       None

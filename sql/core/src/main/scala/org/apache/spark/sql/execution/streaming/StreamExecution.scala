@@ -27,7 +27,6 @@ import java.util.concurrent.locks.{Condition, ReentrantLock}
 import scala.collection.JavaConverters._
 import scala.collection.mutable.{Map => MutableMap}
 import scala.util.control.NonFatal
-
 import com.google.common.util.concurrent.UncheckedExecutionException
 import org.apache.hadoop.fs.Path
 
@@ -296,7 +295,13 @@ abstract class StreamExecution(
    * Furthermore, this method also ensures that [[QueryStartedEvent]] event is posted before the
    * `start()` method returns.
    */
+<<<<<<< HEAD
   private def runStream(): Unit = {
+=======
+
+  //TODO ?!
+  private def runBatches(): Unit = {
+>>>>>>> b718c737dfba751468930aafe3edccd9059aa311
     try {
       sparkSession.sparkContext.setJobGroup(runId.toString, getBatchDescriptionString,
         interruptOnCancel = true)
@@ -328,7 +333,54 @@ abstract class StreamExecution(
       if (state.compareAndSet(INITIALIZING, ACTIVE)) {
         // Unblock `awaitInitialization`
         initializationLatch.countDown()
+<<<<<<< HEAD
         runActivatedStream(sparkSessionForStream)
+=======
+
+        //TODO 有时间间隔的触发器，周期执行下面逻辑
+        triggerExecutor.execute(() => {
+          startTrigger()
+
+          val continueToRun =
+            if (isActive) {
+              reportTimeTaken("triggerExecution") {
+                if (currentBatchId < 0) {
+                  // We'll do this initialization only once
+                  //TODO ？！
+                  populateStartOffsets(sparkSessionToRunBatches)
+                  logDebug(s"Stream running from $committedOffsets to $availableOffsets")
+                } else {
+                  constructNextBatch()
+                }
+                if (dataAvailable) {
+                  currentStatus = currentStatus.copy(isDataAvailable = true)
+                  updateStatusMessage("Processing new data")
+                  //TODO 处理一个batch
+                  runBatch(sparkSessionToRunBatches)
+                }
+              }
+              // Report trigger as finished and construct progress object.
+              finishTrigger(dataAvailable)
+              if (dataAvailable) {
+                // Update committed offsets.
+                committedOffsets ++= availableOffsets
+                batchCommitLog.add(currentBatchId, null)
+                logDebug(s"batch ${currentBatchId} committed")
+                // We'll increase currentBatchId after we complete processing current batch's data
+                currentBatchId += 1
+              } else {
+                currentStatus = currentStatus.copy(isDataAvailable = false)
+                updateStatusMessage("Waiting for data to arrive")
+                Thread.sleep(pollingDelayMs)
+              }
+              true
+            } else {
+              false
+            }
+          updateStatusMessage("Waiting for next trigger")
+          continueToRun
+        })
+>>>>>>> b718c737dfba751468930aafe3edccd9059aa311
         updateStatusMessage("Stopped")
       } else {
         // `stop()` is already called. Let `finally` finish the cleanup.
@@ -413,7 +465,94 @@ abstract class StreamExecution(
     if (state.get == TERMINATED) {
       StreamExecution.isInterruptionException(e, sc)
     } else {
+<<<<<<< HEAD
       false
+=======
+      awaitBatchLock.lock()
+      try {
+        // Wake up any threads that are waiting for the stream to progress.
+        awaitBatchLockCondition.signalAll()
+      } finally {
+        awaitBatchLock.unlock()
+      }
+    }
+  }
+
+  /**
+   * Processes any data available between `availableOffsets` and `committedOffsets`.
+   * @param sparkSessionToRunBatch Isolated [[SparkSession]] to run this batch with.
+   */
+  private def runBatch(sparkSessionToRunBatch: SparkSession): Unit = {
+    // Request unprocessed data from all sources.
+    newData = reportTimeTaken("getBatch") {
+      availableOffsets.flatMap {
+        case (source, available)
+          if committedOffsets.get(source).map(_ != available).getOrElse(true) =>
+          val current = committedOffsets.get(source)
+          //TODO 源数据通过getBatch()方法获取新到达的数据
+          val batch = source.getBatch(current, available)
+          logDebug(s"Retrieving data from $source: $current -> $available")
+          Some(source -> batch)
+        case _ => None
+      }
+    }
+
+    // A list of attributes that will need to be updated.
+    var replacements = new ArrayBuffer[(Attribute, Attribute)]
+    // Replace sources in the logical plan with data that has arrived since the last batch.
+    val withNewSources = logicalPlan transform {
+      case StreamingExecutionRelation(source, output) =>
+        newData.get(source).map { data =>
+          val newPlan = data.logicalPlan
+          assert(output.size == newPlan.output.size,
+            s"Invalid batch: ${Utils.truncatedString(output, ",")} != " +
+            s"${Utils.truncatedString(newPlan.output, ",")}")
+          replacements ++= output.zip(newPlan.output)
+          newPlan
+        }.getOrElse {
+          LocalRelation(output)
+        }
+    }
+
+    // Rewire the plan to use the new attributes that were returned by the source.
+    val replacementMap = AttributeMap(replacements)
+    val triggerLogicalPlan = withNewSources transformAllExpressions {
+      case a: Attribute if replacementMap.contains(a) => replacementMap(a)
+      case ct: CurrentTimestamp =>
+        CurrentBatchTimestamp(offsetSeqMetadata.batchTimestampMs,
+          ct.dataType)
+      case cd: CurrentDate =>
+        CurrentBatchTimestamp(offsetSeqMetadata.batchTimestampMs,
+          cd.dataType, cd.timeZoneId)
+    }
+
+    reportTimeTaken("queryPlanning") {
+      //TODO 触发计算逻辑
+      lastExecution = new IncrementalExecution(
+        sparkSessionToRunBatch,
+        triggerLogicalPlan,
+        outputMode,
+        checkpointFile("state"),
+        currentBatchId,
+        offsetSeqMetadata)
+      lastExecution.executedPlan // Force the lazy generation of execution plan
+    }
+
+    val nextBatch =
+      new Dataset(sparkSessionToRunBatch, lastExecution, RowEncoder(lastExecution.analyzed.schema))
+
+    reportTimeTaken("addBatch") {
+      //TODO 将计算结果提交给Sink
+      sink.addBatch(currentBatchId, nextBatch)
+    }
+
+    awaitBatchLock.lock()
+    try {
+      // Wake up any threads that are waiting for the stream to progress.
+      awaitBatchLockCondition.signalAll()
+    } finally {
+      awaitBatchLock.unlock()
+>>>>>>> b718c737dfba751468930aafe3edccd9059aa311
     }
   }
 

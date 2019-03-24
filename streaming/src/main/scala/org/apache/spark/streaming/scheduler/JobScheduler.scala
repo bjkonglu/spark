@@ -49,6 +49,7 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
   // Use of ConcurrentHashMap.keySet later causes an odd runtime problem due to Java 7/8 diff
   // https://gist.github.com/AlainODea/1375759b8720a3f9f094
   private val jobSets: java.util.Map[Time, JobSet] = new ConcurrentHashMap[Time, JobSet]
+  //TODO spark.streaming.concurrentJobs job并发数量
   private val numConcurrentJobs = ssc.conf.getInt("spark.streaming.concurrentJobs", 1)
   private val jobExecutor =
     ThreadUtils.newDaemonFixedThreadPool(numConcurrentJobs, "streaming-job-executor")
@@ -69,7 +70,8 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
   def start(): Unit = synchronized {
     if (eventLoop != null) return // scheduler has already been started
 
-    logDebug("Starting JobScheduler")
+    logInfo("Starting JobScheduler")
+    //事件处理循环类：用来处理不同类型的事件
     eventLoop = new EventLoop[JobSchedulerEvent]("JobScheduler") {
       override protected def onReceive(event: JobSchedulerEvent): Unit = processEvent(event)
 
@@ -99,8 +101,10 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
       ssc.graph.batchDuration.milliseconds,
       clock)
     executorAllocationManager.foreach(ssc.addStreamingListener)
+
     receiverTracker.start()
     jobGenerator.start()
+
     executorAllocationManager.foreach(_.start())
     logInfo("Started JobScheduler")
   }
@@ -249,16 +253,29 @@ class JobScheduler(val ssc: StreamingContext) extends Logging {
         // it's possible that when `post` is called, `eventLoop` happens to null.
         var _eventLoop = eventLoop
         if (_eventLoop != null) {
+          //触发任务启动事件
           _eventLoop.post(JobStarted(job, clock.getTimeMillis()))
           // Disable checks for existing output directories in jobs launched by the streaming
           // scheduler, since we may need to write output to an existing directory during checkpoint
           // recovery; see SPARK-4835 for more details.
           SparkHadoopWriterUtils.disableOutputSpecValidation.withValue(true) {
+            /*
+            *  触发job计算，在driver端执行foreachFunc(rdd, time)
+            *  举个例子：
+            *  dstream.foreachRDD {rdd =>
+            *  val connection = createNewConnect() // executed at the driver
+            *  rdd.foreach {record =>
+            *     connection.send(record) // executed at the worker
+            *    }
+            *  }
+            *  rdd.foreach -> 会调用Spark Core的rdd分布式执行
+            * */
             job.run()
           }
           _eventLoop = eventLoop
           if (_eventLoop != null) {
-            _eventLoop.post(JobCompleted(job, clock.getTimeMillis()))
+            _eventLoop.post(JobCompleted(job, clock.getTimeMillis()))//job任务执行完成，触发[JobScheduler]job完成事件，->
+            // 然后接着触发[JobGenerator]的清除元数据操作(ClearMetadata)，后续在触发doCheckpoint操作
           }
         } else {
           // JobScheduler has been stopped.

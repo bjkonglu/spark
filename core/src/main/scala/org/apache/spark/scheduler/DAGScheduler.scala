@@ -346,6 +346,7 @@ private[spark] class DAGScheduler(
         stage
 
       case None =>
+        //TODO 提前将当前stage的父阶段提交创建
         // Create stages for all missing ancestor shuffle dependencies.
         getMissingAncestorShuffleDependencies(shuffleDep.rdd).foreach { dep =>
           // Even though getMissingAncestorShuffleDependencies only returns shuffle dependencies
@@ -389,6 +390,7 @@ private[spark] class DAGScheduler(
     checkBarrierStageWithNumSlots(rdd)
     checkBarrierStageWithRDDChainPattern(rdd, rdd.getNumPartitions)
     val numTasks = rdd.partitions.length
+    //TODO 创建ShuffleMapStage的父节点
     val parents = getOrCreateParentStages(rdd, jobId)
     val id = nextStageId.getAndIncrement()
     val stage = new ShuffleMapStage(
@@ -505,6 +507,7 @@ private[spark] class DAGScheduler(
    */
   private[scheduler] def getShuffleDependencies(
       rdd: RDD[_]): HashSet[ShuffleDependency[_, _, _]] = {
+    //TODO 广度优先遍历,获取依赖的父节点
     val parents = new HashSet[ShuffleDependency[_, _, _]]
     val visited = new HashSet[RDD[_]]
     val waitingForVisit = new ArrayStack[RDD[_]]
@@ -705,6 +708,7 @@ private[spark] class DAGScheduler(
     assert(partitions.size > 0)
     val func2 = func.asInstanceOf[(TaskContext, Iterator[_]) => _]
     val waiter = new JobWaiter(this, jobId, partitions.size, resultHandler)
+    //TODO 提交一个Job提交事件
     eventProcessLoop.post(JobSubmitted(
       jobId, rdd, func2, partitions.toArray, callSite, waiter,
       SerializationUtils.clone(properties)))
@@ -733,6 +737,7 @@ private[spark] class DAGScheduler(
       resultHandler: (Int, U) => Unit,
       properties: Properties): Unit = {
     val start = System.nanoTime
+    //TODO DAGScheduler提交任务
     val waiter = submitJob(rdd, func, partitions, callSite, resultHandler, properties)
     ThreadUtils.awaitReady(waiter.completionFuture, Duration.Inf)
     waiter.completionFuture.value.get match {
@@ -975,6 +980,8 @@ private[spark] class DAGScheduler(
     try {
       // New stage creation may throw an exception if, for example, jobs are run on a
       // HadoopRDD whose underlying HDFS files have been deleted.
+      //TODO 通过递归方式创建Stages,finalStage其父节点是一个list[ShuffleMapStage],
+      //TODO 而每个ShuffleMapStages的父节点也是一个list[ShuffleMapStage]...依次类推
       finalStage = createResultStage(finalRDD, func, partitions, jobId, callSite)
     } catch {
       case e: BarrierJobSlotsNumberCheckFailed =>
@@ -1024,8 +1031,11 @@ private[spark] class DAGScheduler(
     finalStage.setActiveJob(job)
     val stageIds = jobIdToStageIds(jobId).toArray
     val stageInfos = stageIds.flatMap(id => stageIdToStage.get(id).map(_.latestInfo))
+    //事件处理机制
     listenerBus.post(
       SparkListenerJobStart(job.jobId, jobSubmissionTime, stageInfos, properties))
+
+    //TODO 提交Stage
     submitStage(finalStage)
   }
 
@@ -1078,15 +1088,19 @@ private[spark] class DAGScheduler(
     if (jobId.isDefined) {
       logDebug("submitStage(" + stage + ")")
       if (!waitingStages(stage) && !runningStages(stage) && !failedStages(stage)) {
+        //TODO 广度优先获取未生成的父节点依赖，父节点的依赖已经创建完并存储在内存里，这一步是直接获取
         val missing = getMissingParentStages(stage).sortBy(_.id)
         logDebug("missing: " + missing)
         if (missing.isEmpty) {
           logInfo("Submitting " + stage + " (" + stage.rdd + "), which has no missing parents")
+          //到达叶子阶段
           submitMissingTasks(stage, jobId.get)
         } else {
           for (parent <- missing) {
+            //递归提交missing parents
             submitStage(parent)
           }
+          //将最后的阶段缓存
           waitingStages += stage
         }
       }
@@ -1118,6 +1132,9 @@ private[spark] class DAGScheduler(
         outputCommitCoordinator.stageStart(
           stage = s.id, maxPartitionId = s.rdd.partitions.length - 1)
     }
+    /*
+    * 生成Task,Task的数量由*parttionsToCompute*决定，最后通过调用链，我们发现Task的数量由*rdd.partitions.length*决定
+    */
     val taskIdToLocations: Map[Int, Seq[TaskLocation]] = try {
       stage match {
         case s: ShuffleMapStage =>
@@ -1230,6 +1247,7 @@ private[spark] class DAGScheduler(
     if (tasks.size > 0) {
       logInfo(s"Submitting ${tasks.size} missing tasks from $stage (${stage.rdd}) (first 15 " +
         s"tasks are for partitions ${tasks.take(15).map(_.partitionId)})")
+      //TODO 提交tasks
       taskScheduler.submitTasks(new TaskSet(
         tasks.toArray, stage.id, stage.latestInfo.attemptNumber, jobId, properties))
     } else {
@@ -1247,6 +1265,25 @@ private[spark] class DAGScheduler(
         case stage : ResultStage =>
           logDebug(s"Stage ${stage} is actually done; (partitions: ${stage.numPartitions})")
       }
+
+      //TODO 提交子阶段(childStages)
+
+      /*
+      * A(shuffle) -> B -> C(shuffle) -> F
+      *                    ^
+      *                    |
+      * D(shuffle) -> E -- H
+      *
+      * stages:
+      * 1. A -> B ShuffleMapStage
+      * 2. 1 -> C ShuffleMapStage
+      * 3. D -> E ShuffleMapStage
+      * 4. 2,(3 -> H) -> F ResultStage
+      *
+      * 从stage-4开始执行，然后寻找stage-4缺失的父节点stage-2,stage-3，将这些缺失的节点放入等待集合中
+      * 并继续往下层寻找子stage，直到找到叶子节点的stage，并将此叶子节点stage当做任务提交。
+      * 当此stage执行完后，开始执行(submitWaitingChildStages)其上层的节点stage
+      * */
       submitWaitingChildStages(stage)
     }
   }
@@ -2044,6 +2081,7 @@ private[spark] class DAGScheduler(
       visited: HashSet[(RDD[_], Int)]): Seq[TaskLocation] = {
     // If the partition has already been visited, no need to re-visit.
     // This avoids exponential path exploration.  SPARK-695
+    //已经访问过该partition
     if (!visited.add((rdd, partition))) {
       // Nil has already been returned for previously visited partitions.
       return Nil
@@ -2062,9 +2100,11 @@ private[spark] class DAGScheduler(
     // If the RDD has narrow dependencies, pick the first partition of the first narrow dependency
     // that has any placement preferences. Ideally we would choose based on transfer sizes,
     // but this will do for now.
+    // 递归调用该RDD及其父RDD
     rdd.dependencies.foreach {
       case n: NarrowDependency[_] =>
         for (inPart <- n.getParents(partition)) {
+          //recursive implement ...
           val locs = getPreferredLocsInternal(n.rdd, inPart, visited)
           if (locs != Nil) {
             return locs

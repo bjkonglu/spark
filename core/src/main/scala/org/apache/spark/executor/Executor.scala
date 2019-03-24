@@ -390,8 +390,10 @@ private[spark] class Executor(
         Executor.taskDeserializationProps.set(taskDescription.properties)
 
         updateDependencies(taskDescription.addedFiles, taskDescription.addedJars)
+        //TODO 第二次反序列化task
         task = ser.deserialize[Task[Any]](
           taskDescription.serializedTask, Thread.currentThread.getContextClassLoader)
+
         task.localProperties = taskDescription.properties
         task.setTaskMemoryManager(taskMemoryManager)
 
@@ -422,6 +424,7 @@ private[spark] class Executor(
         } else 0L
         var threwException = true
         val value = Utils.tryWithSafeFinally {
+          //TODO executor开始执行计算逻辑,根据不同的task类型：ShuffleMapTask和ResultTask执行不同的逻辑
           val res = task.run(
             taskAttemptId = taskId,
             attemptNumber = taskDescription.attemptNumber,

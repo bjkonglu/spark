@@ -49,6 +49,7 @@ class QueryExecution(
   // TODO: Move the planner an optimizer into here from SessionState.
   protected def planner = sparkSession.sessionState.planner
 
+  //TODO 分析校验过程
   def assertAnalyzed(): Unit = analyzed
 
   def assertSupported(): Unit = {
@@ -59,6 +60,7 @@ class QueryExecution(
 
   lazy val analyzed: LogicalPlan = tracker.measurePhase(QueryPlanningTracker.ANALYSIS) {
     SparkSession.setActiveSession(sparkSession)
+  //TODO analyzer: Analyzer
     sparkSession.sessionState.analyzer.executeAndCheck(logical, tracker)
   }
 

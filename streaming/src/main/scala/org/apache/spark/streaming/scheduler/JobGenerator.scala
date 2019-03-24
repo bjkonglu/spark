@@ -30,16 +30,20 @@ import org.apache.spark.util.{Clock, EventLoop, ManualClock, Utils}
 
 /** Event classes for JobGenerator */
 private[scheduler] sealed trait JobGeneratorEvent
+
 private[scheduler] case class GenerateJobs(time: Time) extends JobGeneratorEvent
+
 private[scheduler] case class ClearMetadata(time: Time) extends JobGeneratorEvent
+
 private[scheduler] case class DoCheckpoint(
-    time: Time, clearCheckpointDataLater: Boolean) extends JobGeneratorEvent
+                                            time: Time, clearCheckpointDataLater: Boolean) extends JobGeneratorEvent
+
 private[scheduler] case class ClearCheckpointData(time: Time) extends JobGeneratorEvent
 
 /**
- * This class generates jobs from DStreams as well as drives checkpointing and cleaning
- * up DStream metadata.
- */
+  * This class generates jobs from DStreams as well as drives checkpointing and cleaning
+  * up DStream metadata.
+  */
 private[streaming]
 class JobGenerator(jobScheduler: JobScheduler) extends Logging {
 
@@ -59,6 +63,7 @@ class JobGenerator(jobScheduler: JobScheduler) extends Logging {
     }
   }
 
+  //TODO 定时器，一个动态的工作控制器
   private val timer = new RecurringTimer(clock, ssc.graph.batchDuration.milliseconds,
     longTime => eventLoop.post(GenerateJobs(new Time(longTime))), "JobGenerator")
 
@@ -104,10 +109,10 @@ class JobGenerator(jobScheduler: JobScheduler) extends Logging {
   }
 
   /**
-   * Stop generation of jobs. processReceivedData = true makes this wait until jobs
-   * of current ongoing time interval has been generated, processed and corresponding
-   * checkpoints written.
-   */
+    * Stop generation of jobs. processReceivedData = true makes this wait until jobs
+    * of current ongoing time interval has been generated, processed and corresponding
+    * checkpoints written.
+    */
   def stop(processReceivedData: Boolean): Unit = synchronized {
     if (eventLoop == null) return // generator has already been stopped
 
@@ -131,7 +136,7 @@ class JobGenerator(jobScheduler: JobScheduler) extends Logging {
       // Wait until all the received blocks in the network input tracker has
       // been consumed by network input DStreams, and jobs have been generated with them
       logInfo("Waiting for all received blocks to be consumed for job generation")
-      while(!hasTimedOut && jobScheduler.receiverTracker.hasUnallocatedBlocks) {
+      while (!hasTimedOut && jobScheduler.receiverTracker.hasUnallocatedBlocks) {
         Thread.sleep(pollTime)
       }
       logInfo("Waited for all received blocks to be consumed for job generation")
@@ -145,6 +150,7 @@ class JobGenerator(jobScheduler: JobScheduler) extends Logging {
       def haveAllBatchesBeenProcessed: Boolean = {
         lastProcessedBatch != null && lastProcessedBatch.milliseconds == stopTime
       }
+
       logInfo("Waiting for jobs to be processed and checkpoints to be written")
       while (!hasTimedOut && !haveAllBatchesBeenProcessed) {
         Thread.sleep(pollTime)
@@ -164,15 +170,15 @@ class JobGenerator(jobScheduler: JobScheduler) extends Logging {
   }
 
   /**
-   * Callback called when a batch has been completely processed.
-   */
+    * Callback called when a batch has been completely processed.
+    */
   def onBatchCompletion(time: Time) {
     eventLoop.post(ClearMetadata(time))
   }
 
   /**
-   * Callback called when the checkpoint of a batch has been written.
-   */
+    * Callback called when the checkpoint of a batch has been written.
+    */
   def onCheckpointCompletion(time: Time, clearCheckpointDataLater: Boolean) {
     if (clearCheckpointDataLater) {
       eventLoop.post(ClearCheckpointData(time))
@@ -225,7 +231,9 @@ class JobGenerator(jobScheduler: JobScheduler) extends Logging {
     logInfo("Batches pending processing (" + pendingTimes.length + " batches): " +
       pendingTimes.mkString(", "))
     // Reschedule jobs for these times
-    val timesToReschedule = (pendingTimes ++ downTimes).filter { _ < restartTime }
+    val timesToReschedule = (pendingTimes ++ downTimes).filter {
+      _ < restartTime
+    }
       .distinct.sorted(Time.ordering)
     logInfo("Batches to reschedule (" + timesToReschedule.length + " batches): " +
       timesToReschedule.mkString(", "))
@@ -248,18 +256,24 @@ class JobGenerator(jobScheduler: JobScheduler) extends Logging {
     // truncated periodically. Otherwise, we may run into stack overflows (SPARK-6847).
     ssc.sparkContext.setLocalProperty(RDD.CHECKPOINT_ALL_MARKED_ANCESTORS, "true")
     Try {
-      jobScheduler.receiverTracker.allocateBlocksToBatch(time) // allocate received blocks to batch
-      graph.generateJobs(time) // generate jobs using allocated block
+      jobScheduler.receiverTracker.allocateBlocksToBatch(time) //                 [1]
+      graph.generateJobs(time) //                                                 [2]
     } match {
       case Success(jobs) =>
-        val streamIdToInputInfos = jobScheduler.inputInfoTracker.getInfo(time)
-        jobScheduler.submitJobSet(JobSet(time, jobs, streamIdToInputInfos))
+        val streamIdToInputInfos = jobScheduler.inputInfoTracker.getInfo(time) //  [3]
+        //通过静态DStreamGraph生成JobSet,并由jobScheduler提交
+        jobScheduler.submitJobSet(JobSet(time, jobs, streamIdToInputInfos)) //     [4]
+        //TODO 任务执行成功会清除checkpoint元数据
       case Failure(e) =>
         jobScheduler.reportError("Error generating jobs for time " + time, e)
         PythonDStream.stopStreamingContextIfPythonProcessIsDead(e)
     }
-    eventLoop.post(DoCheckpoint(time, clearCheckpointDataLater = false))
+    eventLoop.post(DoCheckpoint(time, clearCheckpointDataLater = false)) //        [5]
   }
+
+  /*
+  * [5]步骤：job提交完后，触发一次doCheckpoint操作
+  * */
 
   /** Clear DStream metadata for the given `time`. */
   private def clearMetadata(time: Time) {
@@ -268,6 +282,7 @@ class JobGenerator(jobScheduler: JobScheduler) extends Logging {
     // If checkpointing is enabled, then checkpoint,
     // else mark batch to be fully processed
     if (shouldCheckpoint) {
+      // TODO [一个 batch 做完，需要 clean 元数据时，触发一次doCheckpoint操作]
       eventLoop.post(DoCheckpoint(time, clearCheckpointDataLater = true))
     } else {
       // If checkpointing is not enabled, then delete metadata information about

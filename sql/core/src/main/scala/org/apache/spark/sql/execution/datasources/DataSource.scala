@@ -211,6 +211,7 @@ case class DataSource(
 
   /** Returns the name and schema of the source that can be used to continually read data. */
   private def sourceSchema(): SourceInfo = {
+  //TODO 根据数据源类全限定名获取数据源（名称，数据格式）
     providingClass.getConstructor().newInstance() match {
       case s: StreamSourceProvider =>
         val (name, schema) = s.sourceSchema(
@@ -264,6 +265,8 @@ case class DataSource(
   }
 
   /** Returns a source that can be used to continually read data. */
+
+  //TODO 创建源数据源
   def createSource(metadataPath: String): Source = {
     providingClass.getConstructor().newInstance() match {
       case s: StreamSourceProvider =>
@@ -293,6 +296,8 @@ case class DataSource(
   }
 
   /** Returns a sink that can be used to continually write data. */
+
+  //TODO 目标数据源
   def createSink(outputMode: OutputMode): Sink = {
     providingClass.getConstructor().newInstance() match {
       case s: StreamSinkProvider =>
@@ -626,9 +631,11 @@ object DataSource extends Logging {
     }
     val provider2 = s"$provider1.DefaultSource"
     val loader = Utils.getContextOrSparkClassLoader
+    //TODO 通过ClassLoader加载数据源类
     val serviceLoader = ServiceLoader.load(classOf[DataSourceRegister], loader)
 
     try {
+      //TODO 通过数据源短名称获取数据源类的全限定名
       serviceLoader.asScala.filter(_.shortName().equalsIgnoreCase(provider1)).toList match {
         // the provider format did not match any given registered aliases
         case Nil =>

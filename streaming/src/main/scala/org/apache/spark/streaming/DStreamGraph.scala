@@ -119,6 +119,9 @@ final private[streaming] class DStreamGraph extends Serializable with Logging {
     logDebug("Generating jobs for time " + time)
     val jobs = this.synchronized {
       outputStreams.flatMap { outputStream =>
+        /*
+        * 处理完的job类型为Job(time, jobFunc)，其中jobFunc为foreachFunc(rdd, time)
+        * */
         val jobOption = outputStream.generateJob(time)
         jobOption.foreach(_.setCallSite(outputStream.creationSite))
         jobOption

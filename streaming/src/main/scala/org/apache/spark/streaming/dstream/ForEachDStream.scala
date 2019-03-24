@@ -48,6 +48,7 @@ class ForEachDStream[T: ClassTag] (
     parent.getOrCompute(time) match {
       case Some(rdd) =>
         val jobFunc = () => createRDDWithLocalProperties(time, displayInnerRDDOps) {
+          //将foreachFunc施加于rdd
           foreachFunc(rdd, time)
         }
         Some(new Job(time, jobFunc))

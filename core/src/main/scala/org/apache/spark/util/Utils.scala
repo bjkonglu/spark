@@ -1451,6 +1451,7 @@ private[spark] object Utils extends Logging {
       if (ste != null && ste.getMethodName != null
         && !ste.getMethodName.contains("getStackTrace")) {
         if (insideSpark) {
+          //TODO 将方法名符合一定的规则放入栈顶，该规则为sparkInternalExclusionFunction
           if (skipClass(ste.getClassName)) {
             lastSparkMethod = if (ste.getMethodName == "<init>") {
               // Spark method is a constructor; get its class name
@@ -1484,6 +1485,7 @@ private[spark] object Utils extends Logging {
       } else {
         s"$lastSparkMethod at $firstUserFile:$firstUserLine"
       }
+    //将调用栈以栈低到栈顶的顺序打印
     val longForm = callStack.take(callStackDepth).mkString("\n")
 
     CallSite(shortForm, longForm)
