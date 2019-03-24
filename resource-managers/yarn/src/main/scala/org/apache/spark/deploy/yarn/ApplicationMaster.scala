@@ -299,6 +299,7 @@ private[spark] class ApplicationMaster(args: ApplicationMasterArguments) extends
       }
 
       if (isClusterMode) {
+        //xxx: 执行用户代码Driver
         runDriver()
       } else {
         runExecutorLauncher()
@@ -431,6 +432,7 @@ private[spark] class ApplicationMaster(args: ApplicationMasterArguments) extends
     // the allocator is ready to service requests.
     rpcEnv.setupEndpoint("YarnAM", new AMEndpoint(rpcEnv, driverRef))
 
+    // xxx: 在containers上启动Executors
     allocator.allocateResources()
     reporterThread = launchReporterThread()
   }
@@ -446,6 +448,7 @@ private[spark] class ApplicationMaster(args: ApplicationMasterArguments) extends
 
   private def runDriver(): Unit = {
     addAmIpFilter(None)
+    //xxx: 单独启动线程去启动用户代码
     userClassThread = startUserApplication()
 
     // This a bit hacky, but we need to wait until the spark.driver.port property has
@@ -460,6 +463,7 @@ private[spark] class ApplicationMaster(args: ApplicationMasterArguments) extends
         val driverRef = createSchedulerRef(
           sc.getConf.get("spark.driver.host"),
           sc.getConf.get("spark.driver.port"))
+        //xxx: 将AM注册到RM上， 并启动Executors
         registerAM(sc.getConf, rpcEnv, driverRef, sc.ui.map(_.webUrl))
         registered = true
       } else {

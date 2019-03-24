@@ -175,6 +175,7 @@ private[spark] class Client(
 
       // Finally, submit and monitor the application
       logInfo(s"Submitting application $appId to ResourceManager")
+      //xxx: 通过YarnClient提交应用
       yarnClient.submitApplication(appContext)
       launcherBackend.setAppId(appId.toString)
       reportLauncherState(SparkAppHandle.State.SUBMITTED)
@@ -967,7 +968,7 @@ private[spark] class Client(
       Seq(amClass) ++ userClass ++ userJar ++ primaryPyFile ++ primaryRFile ++ userArgs ++
       Seq("--properties-file", buildPath(Environment.PWD.$$(), LOCALIZED_CONF_DIR, SPARK_CONF_FILE))
 
-    // Command for the ApplicationMaster
+    //xxx: Command for the ApplicationMaster
     val commands = prefixEnv ++
       Seq(Environment.JAVA_HOME.$$() + "/bin/java", "-server") ++
       javaOpts ++ amArgs ++

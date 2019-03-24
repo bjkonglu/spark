@@ -499,6 +499,7 @@ class SparkContext(config: SparkConf) extends Logging {
 
     // start TaskScheduler after taskScheduler sets DAGScheduler reference in DAGScheduler's
     // constructor
+    //xxx: 启动调度，去部署Executors和调度任务到Execurors上
     _taskScheduler.start()
 
     _applicationId = _taskScheduler.applicationId()

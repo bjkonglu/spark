@@ -95,6 +95,7 @@ private[yarn] class ExecutorRunnable(
     credentials.writeTokenStorageToStream(dob)
     ctx.setTokens(ByteBuffer.wrap(dob.getData()))
 
+    //xxx: 准备启动Executor进程的Java命令
     val commands = prepareCommand()
 
     ctx.setCommands(commands.asJava)
@@ -119,6 +120,7 @@ private[yarn] class ExecutorRunnable(
 
     // Send the start request to the ContainerManager
     try {
+      //xxx: 利用nmClient将Executor的Java启动命令发送到指定的nm上运行
       nmClient.startContainer(container.get, ctx)
     } catch {
       case ex: Exception =>
