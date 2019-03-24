@@ -27,9 +27,11 @@ import org.apache.spark.executor.DataReadMethod.DataReadMethod
 import org.apache.spark.scheduler.{SparkListener, SparkListenerJobStart}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.SubqueryExpression
+import org.apache.spark.sql.catalyst.plans.logical.Join
 import org.apache.spark.sql.execution.{RDDScanExec, SparkPlan}
 import org.apache.spark.sql.execution.columnar._
 import org.apache.spark.sql.execution.exchange.ShuffleExchangeExec
+import org.apache.spark.sql.functions._
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.test.{SharedSQLContext, SQLTestUtils}
 import org.apache.spark.storage.{RDDBlockId, StorageLevel}
@@ -924,5 +926,53 @@ class CachedTableSuite extends QueryTest with SQLTestUtils with SharedSQLContext
         assert(!spark.catalog.isCached("t2"))
       }
     }
+  }
+
+  test("Cache should respect the broadcast hint") {
+    val df = broadcast(spark.range(1000)).cache()
+    val df2 = spark.range(1000).cache()
+    df.count()
+    df2.count()
+
+    // Test the broadcast hint.
+    val joinPlan = df.join(df2, "id").queryExecution.optimizedPlan
+    val hint = joinPlan.collect {
+      case Join(_, _, _, _, hint) => hint
+    }
+    assert(hint.size == 1)
+    assert(hint(0).leftHint.get.broadcast)
+    assert(hint(0).rightHint.isEmpty)
+
+    // Clean-up
+    df.unpersist()
+  }
+
+  test("analyzes column statistics in cached query") {
+    def query(): DataFrame = {
+      spark.range(100)
+        .selectExpr("id % 3 AS c0", "id % 5 AS c1", "2 AS c2")
+        .groupBy("c0")
+        .agg(avg("c1").as("v1"), sum("c2").as("v2"))
+    }
+    // First, checks if there is no column statistic in cached query
+    val queryStats1 = query().cache.queryExecution.optimizedPlan.stats.attributeStats
+    assert(queryStats1.map(_._1.name).isEmpty)
+
+    val cacheManager = spark.sharedState.cacheManager
+    val cachedData = cacheManager.lookupCachedData(query().logicalPlan)
+    assert(cachedData.isDefined)
+    val queryAttrs = cachedData.get.plan.output
+    assert(queryAttrs.size === 3)
+    val (c0, v1, v2) = (queryAttrs(0), queryAttrs(1), queryAttrs(2))
+
+    // Analyzes one column in the query output
+    cacheManager.analyzeColumnCacheQuery(spark, cachedData.get, v1 :: Nil)
+    val queryStats2 = query().queryExecution.optimizedPlan.stats.attributeStats
+    assert(queryStats2.map(_._1.name).toSet === Set("v1"))
+
+    // Analyzes two more columns
+    cacheManager.analyzeColumnCacheQuery(spark, cachedData.get, c0 :: v2 :: Nil)
+    val queryStats3 = query().queryExecution.optimizedPlan.stats.attributeStats
+    assert(queryStats3.map(_._1.name).toSet === Set("c0", "v1", "v2"))
   }
 }

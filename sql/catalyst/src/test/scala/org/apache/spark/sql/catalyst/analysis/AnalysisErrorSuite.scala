@@ -17,8 +17,6 @@
 
 package org.apache.spark.sql.catalyst.analysis
 
-import scala.beans.{BeanInfo, BeanProperty}
-
 import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.catalyst.dsl.expressions._
 import org.apache.spark.sql.catalyst.dsl.plans._
@@ -30,8 +28,9 @@ import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.util.{ArrayBasedMapData, GenericArrayData, MapData}
 import org.apache.spark.sql.types._
 
-@BeanInfo
-private[sql] case class GroupableData(@BeanProperty data: Int)
+private[sql] case class GroupableData(data: Int) {
+  def getData: Int = data
+}
 
 private[sql] class GroupableUDT extends UserDefinedType[GroupableData] {
 
@@ -50,8 +49,9 @@ private[sql] class GroupableUDT extends UserDefinedType[GroupableData] {
   private[spark] override def asNullable: GroupableUDT = this
 }
 
-@BeanInfo
-private[sql] case class UngroupableData(@BeanProperty data: Map[Int, Int])
+private[sql] case class UngroupableData(data: Map[Int, Int]) {
+  def getData: Map[Int, Int] = data
+}
 
 private[sql] class UngroupableUDT extends UserDefinedType[UngroupableData] {
 
@@ -214,11 +214,6 @@ class AnalysisErrorSuite extends AnalysisTest {
     "unresolved star expansion in max",
     testRelation2.groupBy('a)(sum(UnresolvedStar(None))),
     "Invalid usage of '*'" :: "in expression 'sum'" :: Nil)
-
-  errorTest(
-    "bad casts",
-    testRelation.select(Literal(1).cast(BinaryType).as('badCast)),
-  "cannot cast" :: Literal(1).dataType.simpleString :: BinaryType.simpleString :: Nil)
 
   errorTest(
     "sorting by unsupported column types",
@@ -443,7 +438,7 @@ class AnalysisErrorSuite extends AnalysisTest {
   }
 
   test("error test for self-join") {
-    val join = Join(testRelation, testRelation, Cross, None)
+    val join = Join(testRelation, testRelation, Cross, None, JoinHint.NONE)
     val error = intercept[AnalysisException] {
       SimpleAnalyzer.checkAnalysis(join)
     }
@@ -565,7 +560,8 @@ class AnalysisErrorSuite extends AnalysisTest {
           LocalRelation(b),
           Filter(EqualTo(UnresolvedAttribute("a"), c), LocalRelation(c)),
           LeftOuter,
-          Option(EqualTo(b, c)))),
+          Option(EqualTo(b, c)),
+          JoinHint.NONE)),
       LocalRelation(a))
     assertAnalysisError(plan1, "Accessing outer query column is not allowed in" :: Nil)
 
@@ -575,7 +571,8 @@ class AnalysisErrorSuite extends AnalysisTest {
           Filter(EqualTo(UnresolvedAttribute("a"), c), LocalRelation(c)),
           LocalRelation(b),
           RightOuter,
-          Option(EqualTo(b, c)))),
+          Option(EqualTo(b, c)),
+          JoinHint.NONE)),
       LocalRelation(a))
     assertAnalysisError(plan2, "Accessing outer query column is not allowed in" :: Nil)
 
