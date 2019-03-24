@@ -84,9 +84,9 @@ private[spark] class SparkSubmit extends Logging {
     }
     appArgs.action match {
       case SparkSubmitAction.SUBMIT => submit(appArgs, uninitLog) //提交任务
-      case SparkSubmitAction.KILL => kill(appArgs)
-      case SparkSubmitAction.REQUEST_STATUS => requestStatus(appArgs)
-      case SparkSubmitAction.PRINT_VERSION => printVersion()
+      case SparkSubmitAction.KILL => kill(appArgs) //停止任务
+      case SparkSubmitAction.REQUEST_STATUS => requestStatus(appArgs) //查询状态
+      case SparkSubmitAction.PRINT_VERSION => printVersion() //打印版本信息
     }
   }
 

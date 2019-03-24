@@ -212,7 +212,7 @@ private[kafka010] class KafkaSource(
    * [`start.get.partitionToOffsets`, `end.partitionToOffsets`), i.e. end.partitionToOffsets is
    * exclusive.
    */
-  override def getBatch(start: Option[Offset], end: Offset): Any = {
+  override def getBatch(start: Option[Offset], end: Offset): DataFrame = {
     // Make sure initialPartitionOffsets is initialized
     initialPartitionOffsets
 

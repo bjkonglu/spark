@@ -296,6 +296,7 @@ class SparkSubmitCommandBuilder extends AbstractCommandBuilder {
         config.get(SparkLauncher.DRIVER_EXTRA_LIBRARY_PATH));
     }
 
+    //xxx: 添加主类信息
     cmd.add("org.apache.spark.deploy.SparkSubmit");
     //TODO 添加spark submit参数
     cmd.addAll(buildSparkSubmitArgs());

@@ -477,7 +477,7 @@ class MicroBatchExecution(
     }
 
     // Replace sources in the logical plan with data that has arrived since the last batch.
-    //TODO 此时logicalPlan是静态的DAG模板
+    //TODO 此时logicalPlan是静态的DAG模板, transform操作会返回一个施加rule的plan的副本
     val newBatchesPlan = logicalPlan transform {
       case StreamingExecutionRelation(source, output) =>
         //TODO newData.get(source)是带有数据的logicalPlan，并替换静态DAG模板中的源
